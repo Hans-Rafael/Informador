@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Informador",
+    "name": "InfoBarrio",
     "slug": "Informador",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,16 +8,18 @@
     "scheme": "informador",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.hansgarcia.infobarrio"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#E0F7FA",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hansgarcia.infobarrio"
     },
     "web": {
       "output": "static",
@@ -28,9 +30,22 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#006874",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "InfoBarrio usa tu ubicación para mostrarte lo que pasa cerca tuyo."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "InfoBarrio necesita acceso a tus fotos para adjuntarlas a tus noticias.",
+          "cameraPermission": "InfoBarrio necesita la cámara para que saques fotos de lo que está pasando."
         }
       ]
     ],

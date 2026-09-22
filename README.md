@@ -1,56 +1,59 @@
-# Welcome to your Expo app 👋
+# InfoBarrio (Informador)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> Las noticias a tu alrededor. Contribuí o recibilas.
 
-## Get started
+App móvil (Expo SDK 57 + Expo Router) basada en el estudio UX `Diseño UX-Informador`.
+La interfaz usa **Material Design 3** mediante [React Native Paper](https://callstack.github.io/react-native-paper/).
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Ejecutar
 
 ```bash
-npm run reset-project
+npm install
+npx expo start      # escanear el QR con Expo Go
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Estructura (según el mapa del sitio del estudio UX)
 
-### Other setup steps
+| Pestaña | Archivo | Qué incluye |
+| --- | --- | --- |
+| Inicio | `src/app/(tabs)/index.tsx` | Mapa con geolocalización, alertas en el mapa, "En esta zona", radio ajustable |
+| Alertas | `src/app/(tabs)/alertas.tsx` | Lista + **Filtros** (categoría, fecha, cercanía, solo validadas, orden) |
+| Mis sitios | `src/app/(tabs)/mis-sitios.tsx` | Casa, trabajo y sitios de interés con sus alertas cercanas |
+| Compartir | `src/app/(tabs)/compartir.tsx` | Editor de noticias: categoría, texto, imagen, ubicación |
+| Detalle | `src/app/alerta/[id].tsx` | Validar noticia, valoración del informante, reportar contenido, compartir |
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- `src/lib/store.tsx`: estado global, ubicación y persistencia local (AsyncStorage).
+- `src/lib/theme.ts`: tema Material 3 claro/oscuro con el color de marca.
+- `src/components/alert-map.tsx`: mapa (`react-native-maps`); `alert-map.web.tsx` es el reemplazo para web.
 
-## Learn more
+## Estado del MVP
 
-To learn more about developing your project with Expo, look at the following resources:
+| Funcionalidad imprescindible | Estado |
+| --- | --- |
+| Editor de noticias | ✅ |
+| Mapa con geolocalización | ✅ |
+| Alertas en el mapa (color por categoría) | ✅ |
+| Selección de categoría | ✅ |
+| Filtrado por cercanía o fecha | ✅ |
+| Validación de noticias | ✅ (local) |
+| Moderación y reporte de contenido | ✅ (local, se oculta con 3 reportes) |
+| Mis sitios | ✅ |
+| Notificaciones en tiempo real | ⏳ requiere backend |
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Los datos se guardan solo en el teléfono. Para compartir alertas entre usuarios y enviar
+notificaciones hace falta un backend (por ejemplo Supabase o Firebase).
 
-## Join the community
+## Generar la APK (EAS Build)
 
-Join our community of developers creating universal apps.
+1. Pegá tu key de Google Maps en `.env.local` (en la raíz del proyecto; no se sube a GitHub).
+2. Ejecutá:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+eas login            # cuenta gratis en expo.dev
+npm run subir-key    # guarda la key de .env.local como variable secreta en EAS
+npm run apk          # genera el .apk en la nube
+```
+
+Al terminar, EAS da un link y un QR para descargar la APK. `GOOGLE_MAPS_API_KEY` es
+obligatoria: sin ella la app se cierra al abrir una pantalla con mapa. La key se crea en
+Google Cloud Console habilitando "Maps SDK for Android".
