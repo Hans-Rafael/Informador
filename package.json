@@ -47,5 +47,6 @@
     "lint": "expo lint",
     "apk": "eas build -p android --profile preview"
   },
+  "packageManager": "pnpm@10.28.0",
   "private": true
 }

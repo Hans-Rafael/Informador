@@ -8,8 +8,8 @@ La interfaz usa **Material Design 3** mediante [React Native Paper](https://call
 ## Ejecutar
 
 ```bash
-npm install
-npx expo start      # escanear el QR con Expo Go
+pnpm install
+pnpm start      # escanear el QR con Expo Go
 ```
 
 ## Estructura (según el mapa del sitio del estudio UX)
@@ -47,7 +47,7 @@ notificaciones hace falta un backend (por ejemplo Supabase o Firebase).
 
 ```bash
 eas login            # cuenta gratis en expo.dev
-npm run apk          # genera el .apk en la nube
+pnpm apk              # genera el .apk en la nube
 ```
 
 Al terminar, EAS da un link y un QR para descargar la APK. No hace falta ninguna API key:
