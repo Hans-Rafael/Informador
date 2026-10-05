@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import {
   Appbar,
   Button,
@@ -48,7 +48,7 @@ export default function AlertasScreen() {
       </Appbar.Header>
 
       {/* Acceso rápido por categoría */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <View style={styles.chips}>
         {CATEGORIES.map((c) => (
           <Chip
             key={c.id}
@@ -60,7 +60,7 @@ export default function AlertasScreen() {
             {c.label}
           </Chip>
         ))}
-      </ScrollView>
+      </View>
 
       <Text variant="labelLarge" style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
         {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatDistance(filters.radius)}
@@ -142,7 +142,7 @@ export default function AlertasScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
   list: { paddingBottom: 16 },
   sheet: { margin: 16, padding: 24, borderRadius: 28 },
