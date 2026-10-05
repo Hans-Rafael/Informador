@@ -7,6 +7,23 @@ import { categoryTextColor, getCategory } from '@/lib/categories';
 import { formatDistance, timeAgo } from '@/lib/geo';
 import { isValidated, type AlertWithDistance } from '@/lib/store';
 
+// Etiqueta compacta "Validada": nunca se parte ni se sale de la card.
+function ValidatedBadge() {
+  const theme = useTheme();
+  return (
+    <View style={[styles.validated, { backgroundColor: theme.colors.primaryContainer }]}>
+      <Icon source="check-decagram" size={12} color={theme.colors.onPrimaryContainer} />
+      <Text
+        variant="labelSmall"
+        numberOfLines={1}
+        style={{ color: theme.colors.onPrimaryContainer }}
+      >
+        Validada
+      </Text>
+    </View>
+  );
+}
+
 export function AlertCard({ alert }: { alert: AlertWithDistance }) {
   const theme = useTheme();
   const router = useRouter();
@@ -40,17 +57,14 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
             {alert.description}
           </Text>
           <View style={styles.meta}>
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            <Text
+              variant="labelSmall"
+              numberOfLines={1}
+              style={[styles.flex, { color: theme.colors.onSurfaceVariant }]}
+            >
               {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
             </Text>
-            {isValidated(alert) && (
-              <View style={styles.validated}>
-                <Icon source="check-decagram" size={14} color={theme.colors.primary} />
-                <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-                  Validada
-                </Text>
-              </View>
-            )}
+            {isValidated(alert) && <ValidatedBadge />}
           </View>
         </View>
       </View>
@@ -85,7 +99,7 @@ export function AlertMiniCard({ alert, width }: { alert: AlertWithDistance; widt
           >
             {category.label.toUpperCase()}
           </Text>
-          {isValidated(alert) && <Icon source="check-decagram" size={16} color={theme.colors.primary} />}
+          {isValidated(alert) && <ValidatedBadge />}
         </View>
         <Text variant="titleMedium" numberOfLines={1}>
           {alert.title}
@@ -109,6 +123,14 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', padding: 12, gap: 12 },
   thumb: { width: 64, height: 64, borderRadius: 12 },
   body: { flex: 1, gap: 2 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  validated: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  validated: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexShrink: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
 });
