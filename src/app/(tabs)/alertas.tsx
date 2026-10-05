@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Appbar,
   Button,
   Chip,
   Divider,
-  Modal,
-  Portal,
   SegmentedButtons,
   Switch,
   Text,
   useTheme,
 } from 'react-native-paper';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AlertCard } from '@/components/alert-card';
 import { EmptyState } from '@/components/empty-state';
@@ -23,6 +23,7 @@ import type { CategoryId, DateFilter, SortBy } from '@/lib/types';
 
 export default function AlertasScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { location, filters, setFilters, resetFilters } = useStore();
   const alerts = useAlertsNear(location, filters.radius, true);
   const [showFilters, setShowFilters] = useState(false);
@@ -84,61 +85,76 @@ export default function AlertasScreen() {
 
       <ShareFab bottom={16} />
 
-      <Portal>
-        <Modal
-          visible={showFilters}
-          onDismiss={() => setShowFilters(false)}
-          contentContainerStyle={[styles.sheet, { backgroundColor: theme.colors.elevation.level3 }]}
+      <Modal
+        visible={showFilters}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setShowFilters(false)}
+      >
+        <Pressable
+          style={styles.backdrop}
+          onPress={() => setShowFilters(false)}
+          accessibilityLabel="Cerrar filtros"
+        />
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: theme.colors.elevation.level3, paddingBottom: insets.bottom + 16 },
+          ]}
         >
-          <Text variant="titleLarge">Filtros</Text>
+          <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text variant="titleLarge">Filtros</Text>
 
-          <Text variant="titleSmall" style={styles.label}>Fecha</Text>
-          <SegmentedButtons
-            value={filters.date}
-            onValueChange={(v) => setFilters({ date: v as DateFilter })}
-            buttons={[
-              { value: 'hoy', label: 'Hoy' },
-              { value: 'semana', label: '7 días' },
-              { value: 'todo', label: 'Todas' },
-            ]}
-          />
+            <Text variant="titleSmall" style={styles.label}>Fecha</Text>
+            <SegmentedButtons
+              value={filters.date}
+              onValueChange={(v) => setFilters({ date: v as DateFilter })}
+              buttons={[
+                { value: 'hoy', label: 'Hoy' },
+                { value: 'semana', label: '7 días' },
+                { value: 'todo', label: 'Todas' },
+              ]}
+            />
 
-          <Text variant="titleSmall" style={styles.label}>Cercanía</Text>
-          <SegmentedButtons
-            value={String(filters.radius)}
-            onValueChange={(v) => setFilters({ radius: Number(v) })}
-            buttons={RADIUS_OPTIONS.map((r) => ({ value: String(r), label: formatDistance(r) }))}
-          />
+            <Text variant="titleSmall" style={styles.label}>Cercanía</Text>
+            <SegmentedButtons
+              value={String(filters.radius)}
+              onValueChange={(v) => setFilters({ radius: Number(v) })}
+              buttons={RADIUS_OPTIONS.map((r) => ({ value: String(r), label: formatDistance(r) }))}
+            />
 
-          <Text variant="titleSmall" style={styles.label}>Ordenar por</Text>
-          <SegmentedButtons
-            value={filters.sortBy}
-            onValueChange={(v) => setFilters({ sortBy: v as SortBy })}
-            buttons={[
-              { value: 'fecha', label: 'Fecha', icon: 'clock-outline' },
-              { value: 'cercania', label: 'Cercanía', icon: 'map-marker-distance' },
-            ]}
-          />
+            <Text variant="titleSmall" style={styles.label}>Ordenar por</Text>
+            <SegmentedButtons
+              value={filters.sortBy}
+              onValueChange={(v) => setFilters({ sortBy: v as SortBy })}
+              buttons={[
+                { value: 'fecha', label: 'Fecha', icon: 'clock-outline' },
+                { value: 'cercania', label: 'Cercanía', icon: 'map-marker-distance' },
+              ]}
+            />
 
-          <Divider style={styles.divider} />
-          <View style={styles.switchRow}>
-            <View style={styles.flex}>
-              <Text variant="bodyLarge">Solo alertas validadas</Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                Confirmadas por al menos 3 vecinos
-              </Text>
+            <Divider style={styles.divider} />
+            <View style={styles.switchRow}>
+              <View style={styles.flex}>
+                <Text variant="bodyLarge">Solo alertas validadas</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Confirmadas por al menos 3 vecinos
+                </Text>
+              </View>
+              <Switch value={filters.onlyValidated} onValueChange={(v) => setFilters({ onlyValidated: v })} />
             </View>
-            <Switch value={filters.onlyValidated} onValueChange={(v) => setFilters({ onlyValidated: v })} />
-          </View>
 
-          <View style={styles.actions}>
-            <Button onPress={resetFilters}>Limpiar</Button>
-            <Button mode="contained" onPress={() => setShowFilters(false)}>
-              Ver {alerts.length} resultados
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+            <View style={styles.actions}>
+              <Button onPress={resetFilters}>Limpiar</Button>
+              <Button mode="contained" onPress={() => setShowFilters(false)}>
+                Ver {alerts.length} resultados
+              </Button>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -148,7 +164,15 @@ const styles = StyleSheet.create({
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
   list: { paddingBottom: 96 },
-  sheet: { margin: 16, padding: 24, borderRadius: 28 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet: {
+    maxHeight: '85%',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+  },
+  handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: 12 },
   label: { marginTop: 16, marginBottom: 8 },
   divider: { marginVertical: 16 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
