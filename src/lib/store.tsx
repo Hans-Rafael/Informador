@@ -31,6 +31,8 @@ type Store = PersistedState & {
   ready: boolean;
   location: Coords;
   locationGranted: boolean;
+  /** true mientras se busca la ubicación (para mostrar un indicador de carga). */
+  locating: boolean;
   refreshLocation: () => Promise<void>;
   publishAlert: (alert: NewAlert) => Alert;
   validateAlert: (id: string) => void;
@@ -56,8 +58,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   });
   const [location, setLocation] = useState<Coords>(DEFAULT_COORDS);
   const [locationGranted, setLocationGranted] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   async function refreshLocation(): Promise<Coords> {
+    setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -74,6 +78,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return current.coords;
     } catch {
       return DEFAULT_COORDS;
+    } finally {
+      setLocating(false);
     }
   }
 
@@ -104,6 +110,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     ready,
     location,
     locationGranted,
+    locating,
     refreshLocation: async () => {
       await refreshLocation();
     },

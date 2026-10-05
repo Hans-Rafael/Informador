@@ -10,6 +10,7 @@ import {
   Chip,
   Dialog,
   Icon,
+  Menu,
   Portal,
   ProgressBar,
   RadioButton,
@@ -31,6 +32,7 @@ export default function AlertaScreen() {
   const { alerts, location, validatedIds, reportedIds, validateAlert, reportAlert } = useStore();
   const alert = alerts.find((a) => a.id === id);
 
+  const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reason, setReason] = useState(REPORT_REASONS[0]);
   const [message, setMessage] = useState('');
@@ -67,13 +69,29 @@ export default function AlertaScreen() {
       <Appbar.Header elevated>
         <Appbar.BackAction onPress={back} />
         <Appbar.Content title={category.label} />
-        <Appbar.Action icon="share-variant" onPress={share} accessibilityLabel="Compartir" />
-        <Appbar.Action
-          icon="flag-outline"
-          disabled={reported || alert.mine}
-          onPress={() => setReportOpen(true)}
-          accessibilityLabel="Reportar contenido"
-        />
+        <Menu
+          visible={menuOpen}
+          onDismiss={() => setMenuOpen(false)}
+          anchor={<Appbar.Action icon="dots-vertical" onPress={() => setMenuOpen(true)} accessibilityLabel="Más opciones" />}
+        >
+          <Menu.Item
+            leadingIcon="share-variant"
+            title="Compartir"
+            onPress={() => {
+              setMenuOpen(false);
+              share();
+            }}
+          />
+          <Menu.Item
+            leadingIcon="flag-outline"
+            title={reported ? 'Ya reportada' : 'Reportar contenido'}
+            disabled={reported || alert.mine}
+            onPress={() => {
+              setMenuOpen(false);
+              setReportOpen(true);
+            }}
+          />
+        </Menu>
       </Appbar.Header>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -95,7 +113,7 @@ export default function AlertaScreen() {
 
           <Text variant="headlineSmall">{alert.title}</Text>
           <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {timeAgo(alert.createdAt)} · a {formatDistance(distanceMeters(location, alert.coords))} de vos
+            {timeAgo(alert.createdAt)} · a {formatDistance(distanceMeters(location, alert.coords))} de tu ubicación
           </Text>
 
           {alert.imageUri && <Image source={{ uri: alert.imageUri }} style={styles.image} contentFit="cover" />}

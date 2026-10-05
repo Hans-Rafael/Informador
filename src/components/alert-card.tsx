@@ -7,10 +7,15 @@ import { categoryTextColor, getCategory } from '@/lib/categories';
 import { formatDistance, timeAgo } from '@/lib/geo';
 import { isValidated, type AlertWithDistance } from '@/lib/store';
 
+// Con foto, la miniatura es más grande para que se pueda escanear la lista de un vistazo.
+const THUMB_ICON = 64;
+const THUMB_WITH_IMAGE = 88;
+
 export function AlertCard({ alert }: { alert: AlertWithDistance }) {
   const theme = useTheme();
   const router = useRouter();
   const category = getCategory(alert.category);
+  const thumbSize = alert.imageUri ? THUMB_WITH_IMAGE : THUMB_ICON;
 
   return (
     <Card
@@ -20,10 +25,14 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
     >
       <View style={styles.row}>
         {alert.imageUri ? (
-          <Image source={{ uri: alert.imageUri }} style={styles.thumb} contentFit="cover" />
+          <Image
+            source={{ uri: alert.imageUri }}
+            style={[styles.thumb, { width: thumbSize, height: thumbSize }]}
+            contentFit="cover"
+          />
         ) : (
           <Avatar.Icon
-            size={64}
+            size={thumbSize}
             icon={category.icon}
             color="#FFFFFF"
             style={[styles.thumb, { backgroundColor: category.color }]}
@@ -61,7 +70,7 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
 const styles = StyleSheet.create({
   card: { marginHorizontal: 16, marginBottom: 12 },
   row: { flexDirection: 'row', padding: 12, gap: 12 },
-  thumb: { width: 64, height: 64, borderRadius: 12 },
+  thumb: { borderRadius: 12 },
   body: { flex: 1, gap: 2 },
   meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
   validated: { flexDirection: 'row', alignItems: 'center', gap: 4 },

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Button, Card, Icon, IconButton, Text, useTheme } from 'react-native-paper';
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
 import { categoryTextColor, getCategory, SITE_TYPES } from '@/lib/categories';
 import { MAP_ICON_PATHS } from '@/lib/map-icons';
+import { distanceMeters, formatDistance } from '@/lib/geo';
 import { useStore } from '@/lib/store';
 import type { Alert, Coords, Site } from '@/lib/types';
 
@@ -40,7 +41,9 @@ const HTML = `<!doctype html><html><head><meta charset="utf-8">
 var map = L.map('map', { zoomControl: false, attributionControl: true }).setView([0, 0], 15);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19, attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+}).on('tileload', function () { post({ type: 'tiles' }); })
+  .on('tileerror', function () { post({ type: 'tileerror' }); })
+  .addTo(map);
 var layer = L.layerGroup().addTo(map);
 var pickMarker = null;
 var data = null;
@@ -64,9 +67,9 @@ function render(d) {
   if (first) map.fitBounds(c.getBounds(), { animate: true });
   if (d.user) L.marker(d.user, { icon: dot('#1A73E8', 16), interactive: false }).addTo(layer);
   d.alerts.forEach(function (a) {
-    L.marker(a.coords, { icon: pin(a.color, d.onPin, d.ring, a.icon, 32, true) })
-      .bindPopup('<b>' + esc(a.title) + '</b><br>' + esc(a.label) + ' · <a href="#" onclick="post({type:\\'open\\',id:\\'' + a.id + '\\'});return false">Ver más</a>')
-      .addTo(layer);
+    var m = L.marker(a.coords, { icon: pin(a.color, d.onPin, d.ring, a.icon, 32, true) }).addTo(layer);
+    if (d.selectable) m.on('click', function () { post({ type: 'select', id: a.id }); });
+    else m.bindPopup('<b>' + esc(a.title) + '</b><br>' + esc(a.label));
   });
   d.sites.forEach(function (s) {
     L.marker(s.coords, { icon: pin(d.tertiary, d.onTertiary, d.ring, s.icon, 28, false) }).bindPopup('<b>' + esc(s.name) + '</b><br>' + esc(s.label)).addTo(layer);
@@ -77,7 +80,10 @@ function render(d) {
     pickMarker.on('dragend', function () { var p = pickMarker.getLatLng(); post({ type: 'pick', latitude: p.lat, longitude: p.lng }); });
   }
 }
-map.on('click', function (e) { if (data && data.canPick) post({ type: 'pick', latitude: e.latlng.lat, longitude: e.latlng.lng }); });
+map.on('click', function (e) {
+  if (data && data.canPick) post({ type: 'pick', latitude: e.latlng.lat, longitude: e.latlng.lng });
+  else post({ type: 'deselect' });
+});
 function onMsg(e) { try { render(JSON.parse(e.data)); } catch (_) {} }
 document.addEventListener('message', onMsg);
 window.addEventListener('message', onMsg);
@@ -100,6 +106,10 @@ export function AlertMap({
   const { location: user } = useStore();
   const ref = useRef<RNWebView>(null);
   const ready = useRef(false);
+  const [status, setStatus] = useState<'loading' | 'ok' | 'offline'>('loading');
+  const [attempt, setAttempt] = useState(0);
+  const [selectedId, setSelectedId] = useState<string>();
+  const selected = alerts.find((a) => a.id === selectedId);
 
   const payload = useMemo(
     () =>
@@ -114,6 +124,7 @@ export function AlertMap({
         ring: theme.dark ? theme.colors.surface : '#FFFFFF',
         user: showsUserLocation ? [user.latitude, user.longitude] : null,
         canPick: !!onPick,
+        selectable: !!onOpenAlert,
         picked: picked ? [picked.latitude, picked.longitude] : null,
         alerts: alerts.map((a) => {
           const cat = getCategory(a.category);
@@ -133,8 +144,21 @@ export function AlertMap({
           coords: [s.coords.latitude, s.coords.longitude],
         })),
       }),
-    [center, radius, alerts, sites, showsUserLocation, user, picked, onPick, theme],
+    [center, radius, alerts, sites, showsUserLocation, user, picked, onPick, onOpenAlert, theme],
   );
+
+  // Si Leaflet o los mosaicos no cargan (sin internet), no dejamos un cuadro en blanco.
+  useEffect(() => {
+    if (status !== 'loading') return;
+    const timer = setTimeout(() => setStatus('offline'), 10000);
+    return () => clearTimeout(timer);
+  }, [status, attempt]);
+
+  const retry = () => {
+    ready.current = false;
+    setStatus('loading');
+    setAttempt((n) => n + 1);
+  };
 
   const send = () => ref.current?.injectJavaScript(`render(${payload});true;`);
 
@@ -148,26 +172,80 @@ export function AlertMap({
     if (msg.type === 'ready') {
       ready.current = true;
       send();
+    } else if (msg.type === 'tiles') {
+      setStatus('ok');
+    } else if (msg.type === 'tileerror') {
+      setStatus((s) => (s === 'ok' ? s : 'offline'));
     } else if (msg.type === 'pick') {
       onPick?.({ latitude: msg.latitude, longitude: msg.longitude });
-    } else if (msg.type === 'open') {
-      const alert = alerts.find((a) => a.id === msg.id);
-      if (alert) onOpenAlert?.(alert);
+    } else if (msg.type === 'select') {
+      setSelectedId(msg.id);
+    } else if (msg.type === 'deselect') {
+      setSelectedId(undefined);
     }
   };
 
+  const selectedCategory = selected && getCategory(selected.category);
+
   return (
-    <WebView
-      ref={ref}
-      style={[StyleSheet.absoluteFill, style]}
-      originWhitelist={['*']}
-      source={{ html: HTML, baseUrl: 'https://localhost' }}
-      onMessage={onMessage}
-      javaScriptEnabled
-      domStorageEnabled
-      overScrollMode="never"
-      scrollEnabled={interactive}
-      pointerEvents={interactive ? 'auto' : 'none'}
-    />
+    <View style={[StyleSheet.absoluteFill, style]}>
+      <WebView
+        key={attempt}
+        ref={ref}
+        style={StyleSheet.absoluteFill}
+        originWhitelist={['*']}
+        source={{ html: HTML, baseUrl: 'https://localhost' }}
+        onMessage={onMessage}
+        onError={() => setStatus('offline')}
+        onHttpError={() => setStatus((s) => (s === 'ok' ? s : 'offline'))}
+        javaScriptEnabled
+        domStorageEnabled
+        overScrollMode="never"
+        scrollEnabled={interactive}
+        pointerEvents={interactive ? 'auto' : 'none'}
+      />
+
+      {status !== 'ok' && (
+        <View style={[styles.overlay, { backgroundColor: theme.colors.surfaceVariant }]}>
+          {status === 'loading' ? (
+            <ActivityIndicator accessibilityLabel="Cargando mapa" />
+          ) : (
+            <>
+              <Icon source="wifi-off" size={32} color={theme.colors.onSurfaceVariant} />
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                No se pudo cargar el mapa. Revisá tu conexión.
+              </Text>
+              <Button mode="contained-tonal" icon="refresh" onPress={retry} compact>
+                Reintentar
+              </Button>
+            </>
+          )}
+        </View>
+      )}
+
+      {selected && selectedCategory && onOpenAlert && (
+        <Card mode="elevated" style={styles.miniCard} onPress={() => onOpenAlert(selected)}>
+          <View style={styles.miniRow}>
+            <Icon source={selectedCategory.icon} size={28} color={categoryTextColor(selected.category, theme.dark)} />
+            <View style={styles.miniText}>
+              <Text variant="titleSmall" numberOfLines={1}>
+                {selected.title}
+              </Text>
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                {selectedCategory.label} · a {formatDistance(distanceMeters(user, selected.coords))} · Ver más
+              </Text>
+            </View>
+            <IconButton icon="close" size={18} onPress={() => setSelectedId(undefined)} accessibilityLabel="Cerrar" />
+          </View>
+        </Card>
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 24 },
+  miniCard: { position: 'absolute', top: 12, left: 12, right: 12 },
+  miniRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16 },
+  miniText: { flex: 1 },
+});

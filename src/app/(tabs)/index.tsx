@@ -15,7 +15,7 @@ import { useAlertsNear, useStore } from '@/lib/store';
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { location, locationGranted, filters, setFilters, refreshLocation } = useStore();
+  const { location, locationGranted, locating, filters, setFilters, refreshLocation } = useStore();
   const alerts = useAlertsNear(location, filters.radius);
   const [radiusMenu, setRadiusMenu] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -77,6 +77,8 @@ export default function HomeScreen() {
               <IconButton
                 icon="crosshairs-gps"
                 mode="contained-tonal"
+                loading={locating}
+                disabled={locating}
                 onPress={refreshLocation}
                 accessibilityLabel="Centrar en mi ubicación"
               />
