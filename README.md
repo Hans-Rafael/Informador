@@ -24,7 +24,7 @@ npx expo start      # escanear el QR con Expo Go
 
 - `src/lib/store.tsx`: estado global, ubicación y persistencia local (AsyncStorage).
 - `src/lib/theme.ts`: tema Material 3 claro/oscuro con el color de marca.
-- `src/components/alert-map.tsx`: mapa (`react-native-maps`); `alert-map.web.tsx` es el reemplazo para web.
+- `src/components/alert-map.tsx`: mapa (Leaflet + OpenStreetMap en un `WebView`); `alert-map.web.tsx` es el reemplazo para web.
 
 ## Estado del MVP
 
@@ -45,15 +45,11 @@ notificaciones hace falta un backend (por ejemplo Supabase o Firebase).
 
 ## Generar la APK (EAS Build)
 
-1. Pegá tu key de Google Maps en `.env.local` (en la raíz del proyecto; no se sube a GitHub).
-2. Ejecutá:
-
 ```bash
 eas login            # cuenta gratis en expo.dev
-npm run subir-key    # guarda la key de .env.local como variable secreta en EAS
 npm run apk          # genera el .apk en la nube
 ```
 
-Al terminar, EAS da un link y un QR para descargar la APK. `GOOGLE_MAPS_API_KEY` es
-obligatoria: sin ella la app se cierra al abrir una pantalla con mapa. La key se crea en
-Google Cloud Console habilitando "Maps SDK for Android".
+Al terminar, EAS da un link y un QR para descargar la APK. No hace falta ninguna API key:
+el mapa usa OpenStreetMap + Leaflet (en un WebView), gratis. Necesita conexión a internet
+para cargar los mosaicos del mapa.
