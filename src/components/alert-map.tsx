@@ -4,6 +4,7 @@ import { useTheme } from 'react-native-paper';
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
 import { getCategory, SITE_TYPES } from '@/lib/categories';
+import { useStore } from '@/lib/store';
 import type { Alert, Coords, Site } from '@/lib/types';
 
 // Los tipos de la clase WebView no encajan con JSX en React 19: los reexponemos como componente.
@@ -52,7 +53,7 @@ function render(d) {
   layer.clearLayers();
   var c = L.circle(d.center, { radius: d.radius, color: d.primary, weight: 1.5, fillColor: d.primary, fillOpacity: 0.08 }).addTo(layer);
   if (first) map.fitBounds(c.getBounds(), { animate: true });
-  if (d.showsUser) L.marker(d.center, { icon: dot('#1A73E8', 16), interactive: false }).addTo(layer);
+  if (d.user) L.marker(d.user, { icon: dot('#1A73E8', 16), interactive: false }).addTo(layer);
   d.alerts.forEach(function (a) {
     L.marker(a.coords, { icon: dot(a.color, 22) })
       .bindPopup('<b>' + esc(a.title) + '</b><br>' + esc(a.label) + ' · <a href="#" onclick="post({type:\\'open\\',id:\\'' + a.id + '\\'});return false">Ver más</a>')
@@ -86,6 +87,7 @@ export function AlertMap({
   style,
 }: AlertMapProps) {
   const theme = useTheme();
+  const { location: user } = useStore();
   const ref = useRef<RNWebView>(null);
   const ready = useRef(false);
 
@@ -96,7 +98,7 @@ export function AlertMap({
         radius,
         primary: theme.colors.primary,
         tertiary: theme.colors.tertiary,
-        showsUser: showsUserLocation,
+        user: showsUserLocation ? [user.latitude, user.longitude] : null,
         canPick: !!onPick,
         picked: picked ? [picked.latitude, picked.longitude] : null,
         alerts: alerts.map((a) => {
@@ -115,7 +117,7 @@ export function AlertMap({
           coords: [s.coords.latitude, s.coords.longitude],
         })),
       }),
-    [center, radius, alerts, sites, showsUserLocation, picked, onPick, theme],
+    [center, radius, alerts, sites, showsUserLocation, user, picked, onPick, theme],
   );
 
   const send = () => ref.current?.injectJavaScript(`render(${payload});true;`);
