@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import MapView, { Circle, Marker } from 'react-native-maps';
+import MapView, { Circle, Marker, UrlTile } from 'react-native-maps';
 import { useTheme } from 'react-native-paper';
 
 import { getCategory, SITE_TYPES } from '@/lib/categories';
@@ -45,10 +45,13 @@ export function AlertMap({
       initialRegion={regionFor(center, radius)}
       showsUserLocation={showsUserLocation}
       showsMyLocationButton={false}
+      // Sin mosaicos de Google: dibujamos OpenStreetMap (gratis) encima de un mapa vacío.
+      mapType="none"
       toolbarEnabled={false}
       userInterfaceStyle={theme.dark ? 'dark' : 'light'}
       onPress={onPick ? (e) => onPick(e.nativeEvent.coordinate) : undefined}
     >
+      <UrlTile urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} zIndex={-1} />
       <Circle
         center={center}
         radius={radius}
