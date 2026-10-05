@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import MapView, { Circle, Marker, UrlTile } from 'react-native-maps';
+import { Camera, GeoJSONSource, Layer, Map, UserLocation, ViewAnnotation } from '@maplibre/maplibre-react-native';
+import { useMemo } from 'react';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
-import { getCategory, SITE_TYPES } from '@/lib/categories';
+import { getCategory } from '@/lib/categories';
 import { regionFor } from '@/lib/geo';
 import type { Alert, Coords, Site } from '@/lib/types';
 
@@ -14,11 +14,53 @@ export type AlertMapProps = {
   sites?: Site[];
   showsUserLocation?: boolean;
   onOpenAlert?: (alert: Alert) => void;
-  /** Modo selección: muestra un pin arrastrable y avisa cuando cambia. */
+  /** Modo selección: muestra un pin y avisa cuando se toca otro punto del mapa. */
   picked?: Coords;
   onPick?: (coords: Coords) => void;
   style?: StyleProp<ViewStyle>;
 };
+
+// Mosaicos gratuitos de OpenStreetMap: no hace falta ninguna API key.
+const MAP_STYLE = {
+  version: 8 as const,
+  sources: {
+    osm: {
+      type: 'raster' as const,
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: '© OpenStreetMap contributors',
+    },
+  },
+  layers: [{ id: 'osm', type: 'raster' as const, source: 'osm' }],
+};
+
+// Polígono que aproxima un círculo de `radius` metros alrededor de `center`.
+function circlePolygon(center: Coords, radius: number, steps = 64): GeoJSON.Feature<GeoJSON.Polygon> {
+  const dLat = radius / 111320;
+  const dLon = radius / (111320 * Math.cos((center.latitude * Math.PI) / 180));
+  const ring: [number, number][] = [];
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    ring.push([center.longitude + dLon * Math.cos(angle), center.latitude + dLat * Math.sin(angle)]);
+  }
+  return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring] } };
+}
+
+function Pin({ color, size = 22 }: { color: string; size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+        borderWidth: 3,
+        borderColor: '#FFFFFF',
+      }}
+    />
+  );
+}
 
 export function AlertMap({
   center,
@@ -32,60 +74,66 @@ export function AlertMap({
   style,
 }: AlertMapProps) {
   const theme = useTheme();
-  const ref = useRef<MapView>(null);
-
-  useEffect(() => {
-    ref.current?.animateToRegion(regionFor(center, radius), 400);
+  const area = useMemo(() => circlePolygon(center, radius), [center.latitude, center.longitude, radius]);
+  const bounds = useMemo(() => {
+    const r = regionFor(center, radius);
+    return [
+      center.longitude - r.longitudeDelta / 2,
+      center.latitude - r.latitudeDelta / 2,
+      center.longitude + r.longitudeDelta / 2,
+      center.latitude + r.latitudeDelta / 2,
+    ] as [number, number, number, number];
   }, [center.latitude, center.longitude, radius]);
 
   return (
-    <MapView
-      ref={ref}
+    <Map
       style={[StyleSheet.absoluteFill, style]}
-      initialRegion={regionFor(center, radius)}
-      showsUserLocation={showsUserLocation}
-      showsMyLocationButton={false}
-      // Sin mosaicos de Google: dibujamos OpenStreetMap (gratis) encima de un mapa vacío.
-      mapType="none"
-      toolbarEnabled={false}
-      userInterfaceStyle={theme.dark ? 'dark' : 'light'}
-      onPress={onPick ? (e) => onPick(e.nativeEvent.coordinate) : undefined}
+      mapStyle={MAP_STYLE}
+      compass={false}
+      onPress={
+        onPick
+          ? (e) => {
+              const [longitude, latitude] = e.nativeEvent.lngLat;
+              onPick({ latitude, longitude });
+            }
+          : undefined
+      }
     >
-      <UrlTile urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} zIndex={-1} />
-      <Circle
-        center={center}
-        radius={radius}
-        strokeColor={theme.colors.primary}
-        strokeWidth={1.5}
-        fillColor={theme.dark ? 'rgba(79,216,235,0.08)' : 'rgba(0,104,116,0.08)'}
-      />
+      <Camera bounds={bounds} duration={400} />
+
+      <GeoJSONSource id="area" data={area}>
+        <Layer id="area-fill" type="fill" paint={{ 'fill-color': theme.colors.primary, 'fill-opacity': 0.08 }} />
+        <Layer id="area-line" type="line" paint={{ 'line-color': theme.colors.primary, 'line-width': 1.5 }} />
+      </GeoJSONSource>
+
+      {showsUserLocation && <UserLocation />}
+
       {alerts.map((alert) => (
-        <Marker
+        <ViewAnnotation
           key={alert.id}
-          coordinate={alert.coords}
-          pinColor={getCategory(alert.category).color}
-          title={alert.title}
-          description={`${getCategory(alert.category).label} · Tocá para ver más`}
-          onCalloutPress={() => onOpenAlert?.(alert)}
-        />
+          id={`alert-${alert.id}`}
+          lngLat={[alert.coords.longitude, alert.coords.latitude]}
+          onPress={() => onOpenAlert?.(alert)}
+        >
+          <Pin color={getCategory(alert.category).color} />
+        </ViewAnnotation>
       ))}
+
       {sites.map((site) => (
-        <Marker
+        <ViewAnnotation
           key={site.id}
-          coordinate={site.coords}
-          pinColor={theme.colors.tertiary}
-          title={site.name}
-          description={SITE_TYPES[site.type].label}
-        />
+          id={`site-${site.id}`}
+          lngLat={[site.coords.longitude, site.coords.latitude]}
+        >
+          <Pin color={theme.colors.tertiary} size={18} />
+        </ViewAnnotation>
       ))}
+
       {picked && (
-        <Marker
-          coordinate={picked}
-          draggable
-          pinColor={theme.colors.primary}
-          onDragEnd={(e) => onPick?.(e.nativeEvent.coordinate)}
-        />
+        <ViewAnnotation id="picked" lngLat={[picked.longitude, picked.latitude]}>
+          <Pin color={theme.colors.primary} size={26} />
+        </ViewAnnotation>
       )}
-    </MapView>
+    </Map>
   );
 }

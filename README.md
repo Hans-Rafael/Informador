@@ -7,10 +7,17 @@ La interfaz usa **Material Design 3** mediante [React Native Paper](https://call
 
 ## Ejecutar
 
+El mapa usa **MapLibre + OpenStreetMap** (gratis, sin API key). Al ser código nativo,
+**la app ya no corre en Expo Go**: hace falta un *development build* en el teléfono.
+
 ```bash
 npm install
-npx expo start      # escanear el QR con Expo Go
+npm run dev-apk     # una sola vez: compila en la nube (EAS) un APK de desarrollo; instalalo en el teléfono
+npx expo start      # luego abrí la app instalada y escaneá el QR
+npm run web         # alternativa rápida en el navegador (mapa con Leaflet)
 ```
+
+Si tenés Android Studio, `npm run android` compila e instala el build en el teléfono o emulador.
 
 ## Estructura (según el mapa del sitio del estudio UX)
 
@@ -24,7 +31,7 @@ npx expo start      # escanear el QR con Expo Go
 
 - `src/lib/store.tsx`: estado global, ubicación y persistencia local (AsyncStorage).
 - `src/lib/theme.ts`: tema Material 3 claro/oscuro con el color de marca.
-- `src/components/alert-map.tsx`: mapa (`react-native-maps`); `alert-map.web.tsx` es el reemplazo para web.
+- `src/components/alert-map.tsx`: mapa móvil (`@maplibre/maplibre-react-native` + OpenStreetMap); `alert-map.web.tsx` es el equivalente para web (Leaflet).
 
 ## Estado del MVP
 
@@ -45,15 +52,9 @@ notificaciones hace falta un backend (por ejemplo Supabase o Firebase).
 
 ## Generar la APK (EAS Build)
 
-1. Pegá tu key de Google Maps en `.env.local` (en la raíz del proyecto; no se sube a GitHub).
-2. Ejecutá:
-
 ```bash
 eas login            # cuenta gratis en expo.dev
-npm run subir-key    # guarda la key de .env.local como variable secreta en EAS
-npm run apk          # genera el .apk en la nube
+npm run apk          # genera el .apk final en la nube
 ```
 
-Al terminar, EAS da un link y un QR para descargar la APK. `GOOGLE_MAPS_API_KEY` es
-obligatoria: sin ella la app se cierra al abrir una pantalla con mapa. La key se crea en
-Google Cloud Console habilitando "Maps SDK for Android".
+Al terminar, EAS da un link y un QR para descargar la APK. No se necesita ninguna key de mapas.
