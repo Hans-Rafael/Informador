@@ -101,11 +101,19 @@ export default function AlertasScreen() {
           />
 
           <Text variant="titleSmall" style={styles.label}>Cercanía</Text>
-          <SegmentedButtons
-            value={String(filters.radius)}
-            onValueChange={(v) => setFilters({ radius: Number(v) })}
-            buttons={RADIUS_OPTIONS.map((r) => ({ value: String(r), label: formatDistance(r) }))}
-          />
+          <View style={styles.radiusChips}>
+            {RADIUS_OPTIONS.map((r) => (
+              <Chip
+                key={r}
+                icon="map-marker-radius-outline"
+                selected={filters.radius === r}
+                showSelectedOverlay
+                onPress={() => setFilters({ radius: r })}
+              >
+                {formatDistance(r)}
+              </Chip>
+            ))}
+          </View>
 
           <Text variant="titleSmall" style={styles.label}>Ordenar por</Text>
           <SegmentedButtons
@@ -146,6 +154,7 @@ const styles = StyleSheet.create({
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
   list: { paddingBottom: 16 },
   sheet: { margin: 16, padding: 24, borderRadius: 28 },
+  radiusChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   label: { marginTop: 16, marginBottom: 8 },
   divider: { marginVertical: 16 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
