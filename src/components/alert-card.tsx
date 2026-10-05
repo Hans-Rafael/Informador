@@ -59,9 +59,7 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
 }
 
 // Versión compacta para el carrusel horizontal de la home.
-export const MINI_CARD_WIDTH = 240;
-
-export function AlertMiniCard({ alert }: { alert: AlertWithDistance }) {
+export function AlertMiniCard({ alert, width }: { alert: AlertWithDistance; width: number }) {
   const theme = useTheme();
   const router = useRouter();
   const category = getCategory(alert.category);
@@ -69,7 +67,7 @@ export function AlertMiniCard({ alert }: { alert: AlertWithDistance }) {
   return (
     <Card
       mode="elevated"
-      style={styles.mini}
+      style={{ width }}
       onPress={() => router.push({ pathname: '/alerta/[id]', params: { id: alert.id } })}
     >
       <View style={styles.miniBody}>
@@ -105,7 +103,6 @@ export function AlertMiniCard({ alert }: { alert: AlertWithDistance }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  mini: { width: MINI_CARD_WIDTH },
   miniBody: { padding: 12, gap: 6 },
   miniHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { marginHorizontal: 16, marginBottom: 12 },

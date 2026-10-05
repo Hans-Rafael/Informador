@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Appbar, Badge, Banner, Button, Chip, FAB, IconButton, Menu, Text, useTheme } from 'react-native-paper';
 
-import { AlertMiniCard, MINI_CARD_WIDTH } from '@/components/alert-card';
+import { AlertMiniCard } from '@/components/alert-card';
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
 import { CATEGORIES, RADIUS_OPTIONS } from '@/lib/categories';
@@ -17,8 +17,17 @@ export default function HomeScreen() {
   const { location, locationGranted, filters, setFilters, refreshLocation } = useStore();
   const nearby = useAlertsNear(location, filters.radius);
   const [category, setCategory] = useState<CategoryId | null>(null);
+  const [page, setPage] = useState(0);
+  const { width } = useWindowDimensions();
+  // Deja asomar un borde de la siguiente carta para que se note que se puede deslizar.
+  const cardWidth = width - 48;
+  const interval = cardWidth + 12;
   const alerts = category ? nearby.filter((a) => a.category === category) : nearby;
   const [radiusMenu, setRadiusMenu] = useState(false);
+  const selectCategory = (id: CategoryId | null) => {
+    setCategory(id);
+    setPage(0);
+  };
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   return (
@@ -92,7 +101,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.chips}
         style={styles.chipsScroll}
       >
-        <Chip selected={category === null} showSelectedOverlay onPress={() => setCategory(null)}>
+        <Chip selected={category === null} showSelectedOverlay onPress={() => selectCategory(null)}>
           Todas ({nearby.length})
         </Chip>
         {CATEGORIES.map((c) => (
@@ -101,7 +110,7 @@ export default function HomeScreen() {
             icon={c.icon}
             selected={category === c.id}
             showSelectedOverlay
-            onPress={() => setCategory(category === c.id ? null : c.id)}
+            onPress={() => selectCategory(category === c.id ? null : c.id)}
           >
             {c.label} ({nearby.filter((a) => a.category === c.id).length})
           </Chip>
@@ -115,17 +124,35 @@ export default function HomeScreen() {
           message="No hay alertas en esta categoría y radio. Ampliá el radio o compartí lo que está pasando."
         />
       ) : (
-        <FlatList
-          horizontal
-          data={alerts}
-          keyExtractor={(a) => a.id}
-          renderItem={({ item }) => <AlertMiniCard alert={item} />}
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={MINI_CARD_WIDTH + 12}
-          decelerationRate="fast"
-          contentContainerStyle={styles.carousel}
-          style={styles.carouselScroll}
-        />
+        <>
+          <FlatList
+            key={category ?? 'todas'}
+            horizontal
+            data={alerts}
+            keyExtractor={(a) => a.id}
+            renderItem={({ item }) => <AlertMiniCard alert={item} width={cardWidth} />}
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={interval}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / interval))}
+            contentContainerStyle={styles.carousel}
+            style={styles.carouselScroll}
+          />
+          {alerts.length > 1 && (
+            <View style={styles.dots}>
+              {alerts.map((a, i) => (
+                <View
+                  key={a.id}
+                  style={[
+                    styles.dot,
+                    { backgroundColor: i === page ? theme.colors.primary : theme.colors.outlineVariant },
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </>
       )}
 
       <FAB
@@ -153,6 +180,8 @@ const styles = StyleSheet.create({
   chipsScroll: { flexGrow: 0 },
   chips: { gap: 8, paddingHorizontal: 16, paddingBottom: 12 },
   carouselScroll: { flexGrow: 0 },
-  carousel: { gap: 12, paddingHorizontal: 16, paddingBottom: 88 },
+  carousel: { gap: 12, paddingHorizontal: 16, paddingBottom: 4 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingTop: 12 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
   fab: { position: 'absolute', right: 16, bottom: 16 },
 });
