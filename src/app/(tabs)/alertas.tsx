@@ -15,6 +15,7 @@ import {
 
 import { AlertCard } from '@/components/alert-card';
 import { EmptyState } from '@/components/empty-state';
+import { ShareFab } from '@/components/share-fab';
 import { CATEGORIES, RADIUS_OPTIONS } from '@/lib/categories';
 import { formatDistance } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
@@ -81,6 +82,8 @@ export default function AlertasScreen() {
         }
       />
 
+      <ShareFab bottom={16} />
+
       <Portal>
         <Modal
           visible={showFilters}
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
-  list: { paddingBottom: 16 },
+  list: { paddingBottom: 96 },
   sheet: { margin: 16, padding: 24, borderRadius: 28 },
   label: { marginTop: 16, marginBottom: 8 },
   divider: { marginVertical: 16 },

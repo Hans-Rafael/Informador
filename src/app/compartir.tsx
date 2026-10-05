@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Appbar,
   Button,
@@ -15,6 +15,8 @@ import {
   useTheme,
 } from 'react-native-paper';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { AlertMap } from '@/components/alert-map';
 import { CATEGORIES } from '@/lib/categories';
 import { useStore } from '@/lib/store';
@@ -26,6 +28,7 @@ const DESCRIPTION_MAX = 400;
 export default function CompartirScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { location, publishAlert } = useStore();
 
   const [category, setCategory] = useState<CategoryId | null>(null);
@@ -35,6 +38,8 @@ export default function CompartirScreen() {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState('');
+  const [picking, setPicking] = useState(false);
+  const [draft, setDraft] = useState<Coords | null>(null);
 
   const errors = {
     category: !category,
@@ -74,7 +79,7 @@ export default function CompartirScreen() {
     setImageUri(undefined);
     setCoords(null);
     setSubmitted(false);
-    router.push({ pathname: '/alerta/[id]', params: { id: alert.id } });
+    router.replace({ pathname: '/alerta/[id]', params: { id: alert.id } });
   }
 
   return (
@@ -83,6 +88,7 @@ export default function CompartirScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Appbar.Header elevated>
+        <Appbar.Action icon="close" onPress={() => router.back()} accessibilityLabel="Cerrar" />
         <Appbar.Content title="Compartir mi noticia" />
       </Appbar.Header>
 
@@ -168,16 +174,58 @@ export default function CompartirScreen() {
 
         <Text variant="titleSmall" style={styles.section}>4. Ubicación</Text>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-          {coords ? 'Ubicación elegida en el mapa.' : 'Usamos tu ubicación actual. Tocá el mapa para cambiarla.'}
+          {coords ? 'Ubicación elegida en el mapa.' : 'Usamos tu ubicación actual.'}
         </Text>
         <View style={[styles.map, { borderColor: theme.colors.outlineVariant }]}>
-          <AlertMap center={location} radius={250} picked={coords ?? location} onPick={setCoords} />
+          <AlertMap
+            center={coords ?? location}
+            radius={250}
+            picked={coords ?? location}
+            interactive={false}
+          />
         </View>
+        <Button
+          mode="outlined"
+          icon="map-marker-radius"
+          onPress={() => {
+            setDraft(coords ?? location);
+            setPicking(true);
+          }}
+        >
+          {coords ? 'Cambiar ubicación' : 'Elegir en el mapa'}
+        </Button>
 
         <Button mode="contained" icon="send" onPress={publish} style={styles.publish} contentStyle={styles.publishContent}>
           Publicar
         </Button>
       </ScrollView>
+
+      <Modal visible={picking} animationType="slide" onRequestClose={() => setPicking(false)}>
+        <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
+          <Appbar.Header>
+            <Appbar.Action icon="close" onPress={() => setPicking(false)} accessibilityLabel="Cancelar" />
+            <Appbar.Content title="Elegir ubicación" />
+          </Appbar.Header>
+          <View style={styles.flex}>
+            <AlertMap center={draft ?? location} radius={250} picked={draft ?? location} onPick={setDraft} />
+          </View>
+          <View style={[styles.pickerFooter, { paddingBottom: insets.bottom + 16 }]}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Tocá el mapa o arrastrá el pin.
+            </Text>
+            <Button
+              mode="contained"
+              icon="check"
+              onPress={() => {
+                setCoords(draft);
+                setPicking(false);
+              }}
+            >
+              Confirmar ubicación
+            </Button>
+          </View>
+        </View>
+      </Modal>
 
       <Snackbar visible={!!message} onDismiss={() => setMessage('')} duration={3000}>
         {message}
@@ -197,5 +245,6 @@ const styles = StyleSheet.create({
   section: { marginTop: 16 },
   map: { height: 180, borderRadius: 16, overflow: 'hidden', borderWidth: 1 },
   publish: { marginTop: 16 },
+  pickerFooter: { padding: 16, gap: 12 },
   publishContent: { paddingVertical: 6 },
 });

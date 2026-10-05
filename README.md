@@ -16,10 +16,10 @@ pnpm start      # escanear el QR con Expo Go
 
 | Pestaña | Archivo | Qué incluye |
 | --- | --- | --- |
-| Inicio | `src/app/(tabs)/index.tsx` | Mapa con geolocalización, alertas en el mapa, "En esta zona", radio ajustable |
+| Inicio | `src/app/(tabs)/index.tsx` | Mapa a pantalla completa con hoja inferior arrastrable "En esta zona", radio ajustable |
 | Alertas | `src/app/(tabs)/alertas.tsx` | Lista + **Filtros** (categoría, fecha, cercanía, solo validadas, orden) |
 | Mis sitios | `src/app/(tabs)/mis-sitios.tsx` | Casa, trabajo y sitios de interés con sus alertas cercanas |
-| Compartir | `src/app/(tabs)/compartir.tsx` | Editor de noticias: categoría, texto, imagen, ubicación |
+| Compartir (botón flotante "+") | `src/app/compartir.tsx` | Editor de noticias: categoría, texto, imagen, ubicación |
 | Detalle | `src/app/alerta/[id].tsx` | Validar noticia, valoración del informante, reportar contenido, compartir |
 
 - `src/lib/store.tsx`: estado global, ubicación y persistencia local (AsyncStorage).

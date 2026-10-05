@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Appbar, Badge, Banner, Button, IconButton, Menu, Text, useTheme } from 'react-native-paper';
 
+import { BottomSheet } from '@/components/bottom-sheet';
 import { AlertCard } from '@/components/alert-card';
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
+import { ShareFab } from '@/components/share-fab';
 import { RADIUS_OPTIONS } from '@/lib/categories';
 import { formatDistance } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
@@ -17,6 +19,7 @@ export default function HomeScreen() {
   const alerts = useAlertsNear(location, filters.radius);
   const [radiusMenu, setRadiusMenu] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [areaHeight, setAreaHeight] = useState(0);
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
@@ -60,56 +63,70 @@ export default function HomeScreen() {
         mostramos Palermo.
       </Banner>
 
-      <View style={styles.map}>
+      <View style={styles.map} onLayout={(e) => setAreaHeight(e.nativeEvent.layout.height)}>
         <AlertMap
           center={location}
           radius={filters.radius}
           alerts={alerts}
           onOpenAlert={(a) => router.push({ pathname: '/alerta/[id]', params: { id: a.id } })}
         />
-        <IconButton
-          icon="crosshairs-gps"
-          mode="contained-tonal"
-          style={styles.locate}
-          onPress={refreshLocation}
-          accessibilityLabel="Centrar en mi ubicación"
-        />
+        <BottomSheet
+          height={areaHeight}
+          accessory={
+            <View style={styles.accessory}>
+              <IconButton
+                icon="crosshairs-gps"
+                mode="contained-tonal"
+                onPress={refreshLocation}
+                accessibilityLabel="Centrar en mi ubicación"
+              />
+              <ShareFab />
+            </View>
+          }
+          header={
+            <View style={styles.sectionHeader}>
+              <Text variant="titleMedium">En esta zona</Text>
+              <Badge
+                size={28}
+                style={{ backgroundColor: theme.colors.primaryContainer, color: theme.colors.onPrimaryContainer }}
+              >
+                {alerts.length}
+              </Badge>
+            </View>
+          }
+        >
+          {(expanded) => (
+            <FlatList
+              data={alerts}
+              keyExtractor={(a) => a.id}
+              renderItem={({ item }) => <AlertCard alert={item} />}
+              scrollEnabled={expanded}
+              contentContainerStyle={styles.list}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="map-search-outline"
+                  title="Todo tranquilo por acá"
+                  message="No hay alertas en tu radio. Ampliá el radio o compartí lo que está pasando."
+                />
+              }
+            />
+          )}
+        </BottomSheet>
       </View>
-
-      <View style={styles.sectionHeader}>
-        <Text variant="titleMedium">En esta zona</Text>
-        <Badge size={28} style={{ backgroundColor: theme.colors.primaryContainer, color: theme.colors.onPrimaryContainer }}>
-          {alerts.length}
-        </Badge>
-      </View>
-
-      <FlatList
-        data={alerts}
-        keyExtractor={(a) => a.id}
-        renderItem={({ item }) => <AlertCard alert={item} />}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <EmptyState
-            icon="map-search-outline"
-            title="Todo tranquilo por acá"
-            message="No hay alertas en tu radio. Ampliá el radio o compartí lo que está pasando."
-          />
-        }
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  map: { height: '40%', overflow: 'hidden' },
-  locate: { position: 'absolute', right: 8, bottom: 8 },
+  map: { flex: 1, overflow: 'hidden' },
+  accessory: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
-  list: { paddingBottom: 16 },
+  list: { paddingBottom: 96 },
 });

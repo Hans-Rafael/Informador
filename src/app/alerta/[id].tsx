@@ -78,7 +78,7 @@ export default function AlertaScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.map}>
-          <AlertMap center={alert.coords} radius={200} alerts={[alert]} />
+          <AlertMap center={alert.coords} radius={200} alerts={[alert]} interactive={false} />
         </View>
 
         <View style={styles.body}>

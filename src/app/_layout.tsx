@@ -23,6 +23,7 @@ function RootStack() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="alerta/[id]" />
+      <Stack.Screen name="compartir" options={{ presentation: 'modal' }} />
       <Stack.Screen name="sitio-nuevo" options={{ presentation: 'modal' }} />
     </Stack>
   );

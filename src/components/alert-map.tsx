@@ -22,6 +22,8 @@ export type AlertMapProps = {
   /** Modo selección: muestra un pin arrastrable y avisa cuando cambia. */
   picked?: Coords;
   onPick?: (coords: Coords) => void;
+  /** false: vista fija que no captura gestos (para usarla dentro de un ScrollView). */
+  interactive?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -84,6 +86,7 @@ export function AlertMap({
   onOpenAlert,
   picked,
   onPick,
+  interactive = true,
   style,
 }: AlertMapProps) {
   const theme = useTheme();
@@ -150,6 +153,8 @@ export function AlertMap({
       javaScriptEnabled
       domStorageEnabled
       overScrollMode="never"
+      scrollEnabled={interactive}
+      pointerEvents={interactive ? 'auto' : 'none'}
     />
   );
 }

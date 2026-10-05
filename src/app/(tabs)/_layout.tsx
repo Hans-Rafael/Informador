@@ -6,7 +6,6 @@ const TAB_ICONS: Record<string, [focused: string, unfocused: string]> = {
   index: ['home', 'home-outline'],
   alertas: ['alert-circle', 'alert-circle-outline'],
   'mis-sitios': ['star', 'star-outline'],
-  compartir: ['share-variant', 'share-variant-outline'],
 };
 
 export default function TabLayout() {
@@ -44,7 +43,6 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
       <Tabs.Screen name="alertas" options={{ title: 'Alertas' }} />
       <Tabs.Screen name="mis-sitios" options={{ title: 'Mis sitios' }} />
-      <Tabs.Screen name="compartir" options={{ title: 'Compartir' }} />
     </Tabs>
   );
 }
