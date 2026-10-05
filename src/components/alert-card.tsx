@@ -58,7 +58,56 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
   );
 }
 
+// Versión compacta para el carrusel horizontal de la home.
+export const MINI_CARD_WIDTH = 240;
+
+export function AlertMiniCard({ alert }: { alert: AlertWithDistance }) {
+  const theme = useTheme();
+  const router = useRouter();
+  const category = getCategory(alert.category);
+
+  return (
+    <Card
+      mode="elevated"
+      style={styles.mini}
+      onPress={() => router.push({ pathname: '/alerta/[id]', params: { id: alert.id } })}
+    >
+      <View style={styles.miniBody}>
+        <View style={styles.miniHeader}>
+          <Avatar.Icon
+            size={36}
+            icon={category.icon}
+            color="#FFFFFF"
+            style={{ backgroundColor: category.color }}
+          />
+          <Text
+            variant="labelMedium"
+            numberOfLines={1}
+            style={[styles.flex, { color: categoryTextColor(alert.category, theme.dark) }]}
+          >
+            {category.label.toUpperCase()}
+          </Text>
+          {isValidated(alert) && <Icon source="check-decagram" size={16} color={theme.colors.primary} />}
+        </View>
+        <Text variant="titleMedium" numberOfLines={1}>
+          {alert.title}
+        </Text>
+        <Text variant="bodySmall" numberOfLines={2} style={{ color: theme.colors.onSurfaceVariant }}>
+          {alert.description}
+        </Text>
+        <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
+        </Text>
+      </View>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  mini: { width: MINI_CARD_WIDTH },
+  miniBody: { padding: 12, gap: 6 },
+  miniHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   card: { marginHorizontal: 16, marginBottom: 12 },
   row: { flexDirection: 'row', padding: 12, gap: 12 },
   thumb: { width: 64, height: 64, borderRadius: 12 },
