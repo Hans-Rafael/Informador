@@ -8,7 +8,8 @@ La interfaz usa **Material Design 3** mediante [React Native Paper](https://call
 ## Ejecutar
 
 El mapa usa **MapLibre + OpenStreetMap** (gratis, sin API key). Al ser código nativo,
-**la app ya no corre en Expo Go**: hace falta un *development build* en el teléfono.
+**el mapa no funciona en Expo Go**: ahí se muestra un aviso en su lugar y el resto de la app
+sí se puede probar. Para ver el mapa hace falta un *development build* en el teléfono.
 
 ```bash
 npm install
@@ -31,7 +32,7 @@ Si tenés Android Studio, `npm run android` compila e instala el build en el tel
 
 - `src/lib/store.tsx`: estado global, ubicación y persistencia local (AsyncStorage).
 - `src/lib/theme.ts`: tema Material 3 claro/oscuro con el color de marca.
-- `src/components/alert-map.tsx`: mapa móvil (`@maplibre/maplibre-react-native` + OpenStreetMap); `alert-map.web.tsx` es el equivalente para web (Leaflet).
+- `src/components/alert-map*.tsx`: `alert-map-native` (MapLibre + OpenStreetMap), `alert-map-placeholder` (Expo Go) y `alert-map.web` (Leaflet); `alert-map.tsx` elige cuál usar.
 
 ## Estado del MVP
 
