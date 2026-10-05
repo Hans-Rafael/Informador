@@ -3,7 +3,8 @@ import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
-import { getCategory, SITE_TYPES } from '@/lib/categories';
+import { categoryTextColor, getCategory, SITE_TYPES } from '@/lib/categories';
+import { MAP_ICON_PATHS } from '@/lib/map-icons';
 import { useStore } from '@/lib/store';
 import type { Alert, Coords, Site } from '@/lib/types';
 
@@ -32,7 +33,7 @@ export type AlertMapProps = {
 const HTML = `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<style>html,body,#map{height:100%;margin:0}.pin{border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.5)}</style>
+<style>html,body,#map{height:100%;margin:0}.pin{display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.5)}.pin svg{display:block}</style>
 </head><body><div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -46,7 +47,13 @@ var data = null;
 function post(msg) { window.ReactNativeWebView.postMessage(JSON.stringify(msg)); }
 function dot(color, size) {
   return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
-    html: '<div class="pin" style="width:' + size + 'px;height:' + size + 'px;background:' + color + '"></div>' });
+    html: '<div class="pin" style="width:' + size + 'px;height:' + size + 'px;background:' + color + ';border:2px solid #fff;border-radius:50%"></div>' });
+}
+// Pin con ícono: círculo para alertas, cuadrado redondeado para sitios (la forma también distingue, no solo el color).
+function pin(color, iconColor, ring, path, size, round) {
+  var svg = '<svg width="' + (size * 0.6) + '" height="' + (size * 0.6) + '" viewBox="0 0 24 24"><path fill="' + iconColor + '" d="' + path + '"/></svg>';
+  return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+    html: '<div class="pin" style="width:' + size + 'px;height:' + size + 'px;background:' + color + ';border:2px solid ' + ring + ';border-radius:' + (round ? '50%' : '7px') + '">' + svg + '</div>' });
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
 function render(d) {
@@ -57,16 +64,16 @@ function render(d) {
   if (first) map.fitBounds(c.getBounds(), { animate: true });
   if (d.user) L.marker(d.user, { icon: dot('#1A73E8', 16), interactive: false }).addTo(layer);
   d.alerts.forEach(function (a) {
-    L.marker(a.coords, { icon: dot(a.color, 22) })
+    L.marker(a.coords, { icon: pin(a.color, d.onPin, d.ring, a.icon, 32, true) })
       .bindPopup('<b>' + esc(a.title) + '</b><br>' + esc(a.label) + ' · <a href="#" onclick="post({type:\\'open\\',id:\\'' + a.id + '\\'});return false">Ver más</a>')
       .addTo(layer);
   });
   d.sites.forEach(function (s) {
-    L.marker(s.coords, { icon: dot(d.tertiary, 18) }).bindPopup('<b>' + esc(s.name) + '</b><br>' + esc(s.label)).addTo(layer);
+    L.marker(s.coords, { icon: pin(d.tertiary, d.onTertiary, d.ring, s.icon, 28, false) }).bindPopup('<b>' + esc(s.name) + '</b><br>' + esc(s.label)).addTo(layer);
   });
   if (pickMarker) { map.removeLayer(pickMarker); pickMarker = null; }
   if (d.picked) {
-    pickMarker = L.marker(d.picked, { icon: dot(d.primary, 24), draggable: true }).addTo(map);
+    pickMarker = L.marker(d.picked, { icon: dot(d.primary, 26), draggable: true }).addTo(map);
     pickMarker.on('dragend', function () { var p = pickMarker.getLatLng(); post({ type: 'pick', latitude: p.lat, longitude: p.lng }); });
   }
 }
@@ -101,6 +108,10 @@ export function AlertMap({
         radius,
         primary: theme.colors.primary,
         tertiary: theme.colors.tertiary,
+        onTertiary: theme.colors.onTertiary,
+        // En modo oscuro: pines claros con ícono oscuro y borde del color de la superficie.
+        onPin: theme.dark ? theme.colors.surface : '#FFFFFF',
+        ring: theme.dark ? theme.colors.surface : '#FFFFFF',
         user: showsUserLocation ? [user.latitude, user.longitude] : null,
         canPick: !!onPick,
         picked: picked ? [picked.latitude, picked.longitude] : null,
@@ -110,13 +121,15 @@ export function AlertMap({
             id: a.id,
             title: a.title,
             label: cat.label,
-            color: cat.color,
+            color: categoryTextColor(a.category, theme.dark),
+            icon: MAP_ICON_PATHS[cat.icon],
             coords: [a.coords.latitude, a.coords.longitude],
           };
         }),
         sites: sites.map((s) => ({
           name: s.name,
           label: SITE_TYPES[s.type].label,
+          icon: MAP_ICON_PATHS[SITE_TYPES[s.type].icon],
           coords: [s.coords.latitude, s.coords.longitude],
         })),
       }),
