@@ -49,7 +49,7 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
             {alert.description}
           </Text>
           <View style={styles.meta}>
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            <Text variant="labelSmall" numberOfLines={1} style={[styles.metaText, { color: theme.colors.onSurfaceVariant }]}>
               {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
             </Text>
             {isValidated(alert) && (
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', padding: 12, gap: 12 },
   thumb: { borderRadius: 12 },
   body: { flex: 1, gap: 2 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  validated: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, gap: 8 },
+  metaText: { flexShrink: 1 },
+  validated: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 4 },
 });
