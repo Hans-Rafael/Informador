@@ -116,6 +116,19 @@ Si Metro no ve un archivo nuevo, reinícialo limpiando la caché: `pnpm start --
 
 La clave `anon`/*publishable* es pública por diseño y puede ir dentro de la app: la protección real son las reglas RLS de `schema.sql`. **Nunca** pongas la clave `service_role` en la app ni en el repositorio.
 
+### Notificaciones push por radio
+
+Cuando alguien publica una alerta, los teléfonos que la tienen dentro de su radio (menos el autor) reciben un aviso, y al tocarlo se abre la alerta. Se activan en la bienvenida o con el interruptor **Avisarme de alertas cercanas** de *Alertas → Filtros*. Se guarda solo una zona aproximada (~100 m), nunca la posición exacta.
+
+Requisitos (todo gratuito):
+
+1. **Supabase:** ejecutar `supabase/push.sql` en el SQL Editor (tabla de tokens y trigger de envío).
+2. **Firebase:** crear un proyecto, registrar la app Android `com.hansgarcia.infobarrio` y poner el `google-services.json` en la raíz del proyecto (no se sube a git).
+3. **EAS:** subir la clave de cuenta de servicio de Firebase con `pnpm exec eas credentials -p android` (FCM V1). **Es un secreto: no la subas a git.**
+4. **Recompilar** la app una vez (`pnpm android`), porque `expo-notifications` es una librería nativa.
+
+Los pasos detallados y cómo probarlo están al final de [`supabase/README.md`](supabase/README.md). Sin `google-services.json` la app compila igual, pero sin push; y hace falta un teléfono real, los emuladores no reciben notificaciones.
+
 ## Generar el APK
 
 **En tu PC** (la opción más rápida; usa tu `.env` y deja la app instalada en el teléfono):
@@ -136,7 +149,15 @@ pnpm exec eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_
 pnpm apk    # eas build -p android --profile preview
 ```
 
-EAS construye con lo que hay en tu carpeta local. Con el plan gratuito, la cola puede tardar más de una hora.
+Para las notificaciones push, EAS también necesita el `google-services.json`, que no está en git. Entrégaselo como variable de archivo (una vez):
+
+```bash
+pnpm exec eas env:create --environment preview --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility sensitive
+```
+
+EAS construye con lo que hay en tu carpeta local. Con el plan gratuito, la cola puede tardar más de una hora. Si te falta algún indicador de `eas env:create`, mira `pnpm exec eas env:create --help`.
+
+La versión final de tu PC lleva el JavaScript **dentro** del APK: no se actualiza sola. Cada vez que cambies código hay que volver a compilarla. El APK firmado con la clave de prueba sirve para testers, no para subirlo a Google Play.
 
 ## Decisiones de diseño
 
