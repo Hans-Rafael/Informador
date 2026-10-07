@@ -116,10 +116,7 @@ export default function AlertasScreen() {
           <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.sheetHeader}>
-              {/* TEMPORAL: en rojo para comprobar que la app carga el código nuevo. */}
-              <Text variant="titleLarge" style={{ color: '#E53935' }}>
-                Filtros
-              </Text>
+              <Text variant="titleLarge">Filtros</Text>
               <IconButton
                 icon="close"
                 onPress={() => setShowFilters(false)}
