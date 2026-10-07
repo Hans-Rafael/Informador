@@ -49,7 +49,11 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
             {alert.description}
           </Text>
           <View style={styles.meta}>
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            <Text
+              variant="labelSmall"
+              numberOfLines={1}
+              style={[styles.metaText, { color: theme.colors.onSurfaceVariant }]}
+            >
               {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
             </Text>
             {isValidated(alert) && (
@@ -71,7 +75,9 @@ const styles = StyleSheet.create({
   card: { marginHorizontal: 16, marginBottom: 12 },
   row: { flexDirection: 'row', padding: 12, gap: 12 },
   thumb: { borderRadius: 12 },
-  body: { flex: 1, gap: 2 },
-  meta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  validated: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  // minWidth: 0 deja que el texto se encoja dentro del flex en lugar de desbordar la tarjeta.
+  body: { flex: 1, minWidth: 0, gap: 2 },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  metaText: { flex: 1, minWidth: 0 },
+  validated: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
 });
