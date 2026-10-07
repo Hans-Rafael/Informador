@@ -1,7 +1,14 @@
 import { StyleSheet, View } from 'react-native';
-import { Icon, Text, useTheme } from 'react-native-paper';
+import { Button, Icon, Text, useTheme } from 'react-native-paper';
 
-export function EmptyState({ icon, title, message }: { icon: string; title: string; message: string }) {
+type Props = {
+  icon: string;
+  title: string;
+  message: string;
+  action?: { label: string; onPress: () => void };
+};
+
+export function EmptyState({ icon, title, message, action }: Props) {
   const theme = useTheme();
   return (
     <View style={styles.container}>
@@ -10,6 +17,11 @@ export function EmptyState({ icon, title, message }: { icon: string; title: stri
       <Text variant="bodyMedium" style={[styles.message, { color: theme.colors.onSurfaceVariant }]}>
         {message}
       </Text>
+      {action && (
+        <Button mode="outlined" onPress={action.onPress} style={styles.action}>
+          {action.label}
+        </Button>
+      )}
     </View>
   );
 }
@@ -17,4 +29,5 @@ export function EmptyState({ icon, title, message }: { icon: string; title: stri
 const styles = StyleSheet.create({
   container: { alignItems: 'center', padding: 32, gap: 8 },
   message: { textAlign: 'center' },
+  action: { marginTop: 8 },
 });

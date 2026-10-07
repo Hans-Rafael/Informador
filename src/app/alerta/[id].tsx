@@ -23,7 +23,7 @@ import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
 import { categoryTextColor, getCategory, HIDDEN_REPORTS_THRESHOLD, REPORT_REASONS, VALIDATED_THRESHOLD } from '@/lib/categories';
 import { distanceMeters, formatDistance, timeAgo } from '@/lib/geo';
-import { isValidated, useStore } from '@/lib/store';
+import { isDemo, isValidated, useStore } from '@/lib/store';
 
 export default function AlertaScreen() {
   const theme = useTheme();
@@ -107,6 +107,11 @@ export default function AlertaScreen() {
             {isValidated(alert) && (
               <Chip icon="check-decagram" compact>
                 Validada
+              </Chip>
+            )}
+            {isDemo(alert) && (
+              <Chip icon="flask-outline" compact>
+                Ejemplo
               </Chip>
             )}
           </View>

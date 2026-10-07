@@ -5,7 +5,7 @@ import { Avatar, Card, Icon, Text, useTheme } from 'react-native-paper';
 
 import { categoryTextColor, getCategory } from '@/lib/categories';
 import { formatDistance, timeAgo } from '@/lib/geo';
-import { isValidated, type AlertWithDistance } from '@/lib/store';
+import { isDemo, isValidated, type AlertWithDistance } from '@/lib/store';
 
 // Con foto, la miniatura es más grande para que se pueda escanear la lista de un vistazo.
 const THUMB_ICON = 64;
@@ -48,23 +48,29 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
           <Text variant="bodySmall" numberOfLines={2} style={{ color: theme.colors.onSurfaceVariant }}>
             {alert.description}
           </Text>
-          <View style={styles.meta}>
-            <Text
-              variant="labelSmall"
-              numberOfLines={1}
-              style={[styles.metaText, { color: theme.colors.onSurfaceVariant }]}
-            >
-              {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
-            </Text>
-            {isValidated(alert) && (
-              <View style={styles.validated}>
-                <Icon source="check-decagram" size={14} color={theme.colors.primary} />
-                <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-                  Validada
-                </Text>
-              </View>
-            )}
-          </View>
+          <Text variant="labelSmall" numberOfLines={1} style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
+            {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
+          </Text>
+          {(isValidated(alert) || isDemo(alert)) && (
+            <View style={styles.badges}>
+              {isValidated(alert) && (
+                <View style={styles.badge}>
+                  <Icon source="check-decagram" size={14} color={theme.colors.primary} />
+                  <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                    Validada
+                  </Text>
+                </View>
+              )}
+              {isDemo(alert) && (
+                <View style={styles.badge}>
+                  <Icon source="flask-outline" size={14} color={theme.colors.onSurfaceVariant} />
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Ejemplo
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
       </View>
     </Card>
@@ -77,7 +83,7 @@ const styles = StyleSheet.create({
   thumb: { borderRadius: 12 },
   // minWidth: 0 deja que el texto se encoja dentro del flex en lugar de desbordar la tarjeta.
   body: { flex: 1, minWidth: 0, gap: 2 },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  metaText: { flex: 1, minWidth: 0 },
-  validated: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
+  meta: { marginTop: 4 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12, rowGap: 2 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 });

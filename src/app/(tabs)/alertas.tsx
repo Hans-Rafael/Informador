@@ -31,6 +31,9 @@ export default function AlertasScreen() {
   const activeFilters =
     filters.categories.length + (filters.date !== 'todo' ? 1 : 0) + (filters.onlyValidated ? 1 : 0);
 
+  // El radio no cuenta como filtro: es un ajuste de zona, no se "quita".
+  const clearFilters = () => setFilters({ categories: [], date: 'todo', onlyValidated: false });
+
   const toggleCategory = (id: CategoryId) =>
     setFilters({
       categories: filters.categories.includes(id)
@@ -52,10 +55,17 @@ export default function AlertasScreen() {
       {/* Acceso rápido por categoría */}
       <CategoryChips selected={filters.categories} onToggle={toggleCategory} />
 
-      <Text variant="labelLarge" style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
-        {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatRadius(filters.radius)}
-        {filters.sortBy === 'cercania' ? ' · por cercanía' : ' · más recientes'}
-      </Text>
+      <View style={styles.summaryRow}>
+        <Text variant="labelLarge" style={[styles.summaryText, { color: theme.colors.onSurfaceVariant }]}>
+          {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatRadius(filters.radius)}
+          {filters.sortBy === 'cercania' ? ' · por cercanía' : ' · más recientes'}
+        </Text>
+        {activeFilters > 0 && (
+          <Button compact icon="filter-remove-outline" onPress={clearFilters}>
+            Quitar filtros
+          </Button>
+        )}
+      </View>
 
       <FlatList
         data={alerts}
@@ -67,6 +77,7 @@ export default function AlertasScreen() {
             icon="filter-remove-outline"
             title="Sin resultados"
             message="Ninguna alerta coincide con los filtros elegidos."
+            action={activeFilters > 0 ? { label: 'Quitar filtros', onPress: clearFilters } : undefined}
           />
         }
       />
@@ -154,7 +165,8 @@ export default function AlertasScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  summary: { paddingHorizontal: 16, paddingBottom: 8 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', paddingLeft: 16, paddingRight: 8, paddingBottom: 8 },
+  summaryText: { flex: 1 },
   list: { paddingBottom: 16 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {

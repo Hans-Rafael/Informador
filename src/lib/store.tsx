@@ -164,6 +164,11 @@ export function isValidated(alert: Alert) {
   return alert.validations >= VALIDATED_THRESHOLD;
 }
 
+// Las alertas de ejemplo (seed.ts) llevan id "seed-N": se marcan para no confundirlas con noticias reales.
+export function isDemo(alert: Alert) {
+  return alert.id.startsWith('seed-');
+}
+
 export type AlertWithDistance = Alert & { distance: number };
 
 // Alertas visibles (sin las ocultas por moderación) con su distancia a `center`.
