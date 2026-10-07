@@ -25,6 +25,8 @@ export type AlertMapProps = {
   /** Modo selección: muestra un pin arrastrable y avisa cuando cambia. */
   picked?: Coords;
   onPick?: (coords: Coords) => void;
+  /** Súbelo en uno para forzar que el mapa vuelva a centrarse en `center` (botón "mi ubicación"). */
+  recenterSignal?: number;
   /** false: vista fija que no captura gestos (para usarla dentro de un ScrollView). */
   interactive?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -65,7 +67,7 @@ function pin(color, iconColor, ring, path, size, round) {
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
 function render(d) {
-  var first = !data || data.center[0] !== d.center[0] || data.center[1] !== d.center[1] || data.radius !== d.radius;
+  var first = !data || data.center[0] !== d.center[0] || data.center[1] !== d.center[1] || data.radius !== d.radius || data.recenter !== d.recenter;
   data = d;
   layer.clearLayers();
   var c = L.circle(d.center, { radius: d.radius, color: d.primary, weight: 1.5, fillColor: d.primary, fillOpacity: 0.08 }).addTo(layer);
@@ -104,6 +106,7 @@ export function AlertMap({
   onOpenAlert,
   picked,
   onPick,
+  recenterSignal = 0,
   interactive = true,
   style,
 }: AlertMapProps) {
@@ -124,6 +127,7 @@ export function AlertMap({
       JSON.stringify({
         center: [center.latitude, center.longitude],
         radius,
+        recenter: recenterSignal,
         primary: theme.colors.primary,
         tertiary: theme.colors.tertiary,
         onTertiary: theme.colors.onTertiary,
@@ -152,7 +156,7 @@ export function AlertMap({
           coords: [s.coords.latitude, s.coords.longitude],
         })),
       }),
-    [center, radius, alerts, sites, showsUserLocation, user, picked, onPick, onOpenAlert, theme],
+    [center, radius, recenterSignal, alerts, sites, showsUserLocation, user, picked, onPick, onOpenAlert, theme],
   );
 
   // Si Leaflet o los mosaicos no cargan (sin internet), no dejamos un cuadro en blanco.

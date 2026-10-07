@@ -19,6 +19,8 @@ export default function HomeScreen() {
   const [radiusMenu, setRadiusMenu] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [areaHeight, setAreaHeight] = useState(0);
+  // Cada pulsación de la mira recentra el mapa, aunque tu ubicación no haya cambiado.
+  const [recenter, setRecenter] = useState(0);
 
   return (
     <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
@@ -67,6 +69,7 @@ export default function HomeScreen() {
           center={location}
           radius={filters.radius}
           alerts={alerts}
+          recenterSignal={recenter}
           onOpenAlert={(a) => router.push({ pathname: '/alerta/[id]', params: { id: a.id } })}
         />
         <BottomSheet
@@ -78,7 +81,10 @@ export default function HomeScreen() {
                 mode="contained-tonal"
                 loading={locating}
                 disabled={locating}
-                onPress={refreshLocation}
+                onPress={async () => {
+                  await refreshLocation();
+                  setRecenter((n) => n + 1);
+                }}
                 accessibilityLabel="Centrar en mi ubicación"
               />
             </View>
