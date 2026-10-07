@@ -31,7 +31,7 @@ export default function SitioNuevoScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Appbar.Header>
-        <Appbar.BackAction onPress={() => router.back()} accessibilityLabel="Volver" />
+        <Appbar.Action icon="close" onPress={() => router.back()} accessibilityLabel="Cerrar" />
         <Appbar.Content title="Nuevo sitio" />
       </Appbar.Header>
 
