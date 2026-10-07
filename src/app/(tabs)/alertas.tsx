@@ -189,6 +189,11 @@ export default function AlertasScreen() {
                 Ver {alerts.length} {alerts.length === 1 ? 'resultado' : 'resultados'}
               </Button>
             </View>
+
+            {/* Indica con qué datos trabaja la app: útil para saber si las claves de Supabase llegaron. */}
+            <Text variant="labelSmall" style={[styles.modeCaption, { color: theme.colors.onSurfaceVariant }]}>
+              {remoteEnabled ? 'Conectado a Supabase' : 'Modo local: sin servidor, sin avisos'}
+            </Text>
           </ScrollView>
         </View>
       </Modal>
@@ -216,6 +221,7 @@ const styles = StyleSheet.create({
   radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   divider: { marginVertical: 16 },
   pushRow: { marginTop: 16 },
+  modeCaption: { textAlign: 'center', marginTop: 8 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 24 },
 });
