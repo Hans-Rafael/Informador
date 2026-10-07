@@ -81,9 +81,11 @@ export default function HomeScreen() {
                 mode="contained-tonal"
                 loading={locating}
                 disabled={locating}
-                onPress={async () => {
-                  await refreshLocation();
+                onPress={() => {
+                  // Primero volvemos ya a la última ubicación conocida; el GPS puede tardar varios
+                  // segundos y, si encuentra otra posición, el mapa se recentra solo al llegar.
                   setRecenter((n) => n + 1);
+                  refreshLocation();
                 }}
                 accessibilityLabel="Centrar en mi ubicación"
               />
