@@ -14,8 +14,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AlertCard } from '@/components/alert-card';
+import { CategoryChips } from '@/components/category-chips';
 import { EmptyState } from '@/components/empty-state';
-import { CATEGORIES, RADIUS_OPTIONS } from '@/lib/categories';
+import { RADIUS_OPTIONS } from '@/lib/categories';
 import { formatRadius } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
 import type { CategoryId, DateFilter, SortBy } from '@/lib/types';
@@ -49,25 +50,7 @@ export default function AlertasScreen() {
       </Appbar.Header>
 
       {/* Acceso rápido por categoría */}
-      {/* flexGrow: 0 evita que el ScrollView horizontal ocupe todo el alto libre y estire los chips. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsScroll}
-        contentContainerStyle={styles.chips}
-      >
-        {CATEGORIES.map((c) => (
-          <Chip
-            key={c.id}
-            icon={c.icon}
-            selected={filters.categories.includes(c.id)}
-            showSelectedOverlay
-            onPress={() => toggleCategory(c.id)}
-          >
-            {c.label}
-          </Chip>
-        ))}
-      </ScrollView>
+      <CategoryChips selected={filters.categories} onToggle={toggleCategory} />
 
       <Text variant="labelLarge" style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
         {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatRadius(filters.radius)}
@@ -171,8 +154,6 @@ export default function AlertasScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  chipsScroll: { flexGrow: 0 },
-  chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
   list: { paddingBottom: 16 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
