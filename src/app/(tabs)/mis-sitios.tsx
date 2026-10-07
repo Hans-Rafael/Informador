@@ -6,7 +6,7 @@ import { Appbar, Card, FAB, IconButton, List, Text, useTheme } from 'react-nativ
 import { AlertCard } from '@/components/alert-card';
 import { EmptyState } from '@/components/empty-state';
 import { SITE_TYPES } from '@/lib/categories';
-import { formatDistance } from '@/lib/geo';
+import { formatRadius } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
 import type { Site, SiteType } from '@/lib/types';
 
@@ -19,7 +19,7 @@ function SiteItem({ site, expanded, onToggle }: { site: Site; expanded: boolean;
     <Card mode="contained" style={styles.card}>
       <List.Item
         title={site.name}
-        description={`${SITE_TYPES[site.type].label} · ${alerts.length} alertas a menos de ${formatDistance(filters.radius)}`}
+        description={`${SITE_TYPES[site.type].label} · ${alerts.length} alertas a menos de ${formatRadius(filters.radius)}`}
         left={(props) => <List.Icon {...props} icon={SITE_TYPES[site.type].icon} color={theme.colors.primary} />}
         right={() => (
           <View style={styles.row}>

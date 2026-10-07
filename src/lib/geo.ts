@@ -18,6 +18,11 @@ export function formatDistance(meters: number): string {
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
 }
 
+/** Radios de búsqueda siempre en km con un decimal: 0.5 km, 1.0 km, 3.0 km, 10.0 km. */
+export function formatRadius(meters: number): string {
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
 export function timeAgo(timestamp: number): string {
   const minutes = Math.floor((Date.now() - timestamp) / 60000);
   if (minutes < 1) return 'Ahora';

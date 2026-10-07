@@ -14,11 +14,8 @@ type Props = {
   header: ReactNode;
   /** Botones flotantes que acompañan a la hoja (esquina superior derecha). */
   accessory?: ReactNode;
-  /**
-   * El contenido recibe si la hoja está desplegada del todo y cuántos px de su parte inferior
-   * quedan fuera de pantalla (para dejar ese margen al final de la lista y poder verla entera).
-   */
-  children: (expanded: boolean, hiddenBottom: number) => ReactNode;
+  /** El contenido recibe si la hoja está desplegada del todo. */
+  children: (expanded: boolean) => ReactNode;
 };
 
 // Hoja inferior arrastrable con tres posiciones. Solo se arrastra desde el encabezado,
@@ -96,7 +93,7 @@ export function BottomSheet({ height, header, accessory, children }: Props) {
           <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
           {header}
         </View>
-        <View style={styles.flex}>{children(snap === 'full', stops[snap])}</View>
+        <View style={styles.flex}>{children(snap === 'full')}</View>
       </View>
     </Animated.View>
   );

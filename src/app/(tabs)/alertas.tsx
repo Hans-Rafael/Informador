@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AlertCard } from '@/components/alert-card';
 import { EmptyState } from '@/components/empty-state';
 import { CATEGORIES, RADIUS_OPTIONS } from '@/lib/categories';
-import { formatDistance } from '@/lib/geo';
+import { formatRadius } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
 import type { CategoryId, DateFilter, SortBy } from '@/lib/types';
 
@@ -70,7 +70,7 @@ export default function AlertasScreen() {
       </ScrollView>
 
       <Text variant="labelLarge" style={[styles.summary, { color: theme.colors.onSurfaceVariant }]}>
-        {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatDistance(filters.radius)}
+        {alerts.length} {alerts.length === 1 ? 'alerta' : 'alertas'} a menos de {formatRadius(filters.radius)}
         {filters.sortBy === 'cercania' ? ' · por cercanía' : ' · más recientes'}
       </Text>
 
@@ -122,16 +122,18 @@ export default function AlertasScreen() {
             />
 
             <Text variant="titleSmall" style={styles.label}>Cercanía</Text>
-            <SegmentedButtons
-              value={String(filters.radius)}
-              onValueChange={(v) => setFilters({ radius: Number(v) })}
-              // Sin el check de selección y con etiquetas cortas, los 4 radios caben sin recortarse.
-              buttons={RADIUS_OPTIONS.map((r) => ({
-                value: String(r),
-                label: r < 1000 ? `${r} m` : `${r / 1000} km`,
-                showSelectedCheck: false,
-              }))}
-            />
+            <View style={styles.radiusRow}>
+              {RADIUS_OPTIONS.map((r) => (
+                <Chip
+                  key={r}
+                  selected={filters.radius === r}
+                  showSelectedOverlay
+                  onPress={() => setFilters({ radius: r })}
+                >
+                  {formatRadius(r)}
+                </Chip>
+              ))}
+            </View>
 
             <Text variant="titleSmall" style={styles.label}>Ordenar por</Text>
             <SegmentedButtons
@@ -183,6 +185,7 @@ const styles = StyleSheet.create({
   },
   handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: 12 },
   label: { marginTop: 16, marginBottom: 8 },
+  radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   divider: { marginVertical: 16 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 24 },

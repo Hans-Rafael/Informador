@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Appbar, Badge, Banner, Button, IconButton, Menu, Text, useTheme } from 'react-native-paper';
 
 import { BottomSheet } from '@/components/bottom-sheet';
-import { AlertCard } from '@/components/alert-card';
+import { AlertCarousel } from '@/components/alert-carousel';
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
 import { RADIUS_OPTIONS } from '@/lib/categories';
-import { formatDistance } from '@/lib/geo';
+import { formatRadius } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
 
 export default function HomeScreen() {
@@ -32,14 +32,14 @@ export default function HomeScreen() {
           onDismiss={() => setRadiusMenu(false)}
           anchor={
             <Button icon="radius-outline" compact onPress={() => setRadiusMenu(true)}>
-              {formatDistance(filters.radius)}
+              {formatRadius(filters.radius)}
             </Button>
           }
         >
           {RADIUS_OPTIONS.map((r) => (
             <Menu.Item
               key={r}
-              title={`Radio de ${formatDistance(r)}`}
+              title={`Radio de ${formatRadius(r)}`}
               leadingIcon={r === filters.radius ? 'check' : undefined}
               onPress={() => {
                 setFilters({ radius: r });
@@ -95,21 +95,17 @@ export default function HomeScreen() {
             </View>
           }
         >
-          {(_expanded, hiddenBottom) => (
-            <FlatList
-              data={alerts}
-              keyExtractor={(a) => a.id}
-              renderItem={({ item }) => <AlertCard alert={item} />}
-              contentContainerStyle={{ paddingBottom: hiddenBottom + 16 }}
-              ListEmptyComponent={
-                <EmptyState
-                  icon="map-search-outline"
-                  title="Todo tranquilo por acá"
-                  message="No hay alertas en tu radio. Ampliá el radio o compartí lo que está pasando."
-                />
-              }
-            />
-          )}
+          {() =>
+            alerts.length === 0 ? (
+              <EmptyState
+                icon="map-search-outline"
+                title="Todo tranquilo por acá"
+                message="No hay alertas en tu radio. Ampliá el radio o compartí lo que está pasando."
+              />
+            ) : (
+              <AlertCarousel alerts={alerts} />
+            )
+          }
         </BottomSheet>
       </View>
     </View>

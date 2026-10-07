@@ -88,7 +88,7 @@ export default function CompartirScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Appbar.Header elevated>
-        <Appbar.Action icon="close" onPress={() => router.back()} accessibilityLabel="Cerrar" />
+        <Appbar.BackAction onPress={() => router.back()} accessibilityLabel="Volver" />
         <Appbar.Content title="Compartir mi noticia" />
       </Appbar.Header>
 
@@ -203,7 +203,7 @@ export default function CompartirScreen() {
       <Modal visible={picking} animationType="slide" onRequestClose={() => setPicking(false)}>
         <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
           <Appbar.Header>
-            <Appbar.Action icon="close" onPress={() => setPicking(false)} accessibilityLabel="Cancelar" />
+            <Appbar.BackAction onPress={() => setPicking(false)} accessibilityLabel="Volver" />
             <Appbar.Content title="Elegir ubicación" />
           </Appbar.Header>
           <View style={styles.flex}>
