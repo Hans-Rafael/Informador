@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AlertCard } from '@/components/alert-card';
 import { EmptyState } from '@/components/empty-state';
-import { ShareFab } from '@/components/share-fab';
 import { CATEGORIES, RADIUS_OPTIONS } from '@/lib/categories';
 import { formatDistance } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
@@ -82,8 +81,6 @@ export default function AlertasScreen() {
           />
         }
       />
-
-      <ShareFab bottom={16} />
 
       <Modal
         visible={showFilters}
@@ -163,7 +160,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
-  list: { paddingBottom: 96 },
+  list: { paddingBottom: 16 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: {
     maxHeight: '85%',

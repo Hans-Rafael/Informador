@@ -7,7 +7,6 @@ import { BottomSheet } from '@/components/bottom-sheet';
 import { AlertCard } from '@/components/alert-card';
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
-import { ShareFab } from '@/components/share-fab';
 import { RADIUS_OPTIONS } from '@/lib/categories';
 import { formatDistance } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
@@ -82,7 +81,6 @@ export default function HomeScreen() {
                 onPress={refreshLocation}
                 accessibilityLabel="Centrar en mi ubicación"
               />
-              <ShareFab />
             </View>
           }
           header={
@@ -97,13 +95,12 @@ export default function HomeScreen() {
             </View>
           }
         >
-          {(expanded) => (
+          {(_expanded, hiddenBottom) => (
             <FlatList
               data={alerts}
               keyExtractor={(a) => a.id}
               renderItem={({ item }) => <AlertCard alert={item} />}
-              scrollEnabled={expanded}
-              contentContainerStyle={styles.list}
+              contentContainerStyle={{ paddingBottom: hiddenBottom + 16 }}
               ListEmptyComponent={
                 <EmptyState
                   icon="map-search-outline"
@@ -130,5 +127,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  list: { paddingBottom: 96 },
 });
