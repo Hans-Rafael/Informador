@@ -28,7 +28,7 @@ Capturas: súbelas a docs/screenshots/ y descomenta.
 | Mis sitios (casa, trabajo y lugares de interés) | ✅ |
 | Alertas compartidas entre usuarios (Supabase, en tiempo real) | ✅ |
 | Pantalla de bienvenida y aviso de sin conexión en el mapa | ✅ |
-| Notificaciones push por radio | ⏳ pendiente |
+| Notificaciones push por radio | ✅ (requiere Firebase, ver `supabase/README.md`) |
 | Valoración (reputación) del informante | ⏳ pendiente en el servidor |
 | Registro de usuario y perfiles | ⏳ deseable |
 
@@ -67,10 +67,12 @@ src/
     remote.ts       Acceso a Supabase (alertas, votos, fotos)
     supabase.ts     Cliente de Supabase (null si faltan las claves)
     connectivity.ts Comprobación de conexión para el mapa
+    push.ts         Permiso y token de notificaciones
     categories.ts   Categorías, radios y umbrales
     theme.ts        Tema Material 3 claro y oscuro
 supabase/
   schema.sql      Tablas, reglas de seguridad (RLS) e imágenes
+  push.sql        Tokens y trigger de notificaciones por radio
   README.md       Puesta en marcha de Supabase
 ```
 
@@ -148,7 +150,7 @@ El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 
 ## Hoja de ruta
 
-- [ ] Notificaciones push por radio (Expo Notifications y una función en Supabase)
+- [ ] Elegir qué categorías avisan, y limpiar tokens caducados
 - [ ] Valoración del informante calculada en el servidor
 - [ ] Registro de usuario y perfiles con métricas de contribución
 - [ ] Modo sin conexión: mosaicos del mapa en caché y alertas guardadas

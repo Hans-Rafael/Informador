@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Appbar,
   Button,
@@ -18,6 +18,8 @@ import { AlertCard } from '@/components/alert-card';
 import { CategoryChips } from '@/components/category-chips';
 import { EmptyState } from '@/components/empty-state';
 import { RADIUS_OPTIONS } from '@/lib/categories';
+import type { PushFailure } from '@/lib/push';
+import { remoteEnabled } from '@/lib/supabase';
 import { formatRadius } from '@/lib/geo';
 import { useAlertsNear, useStore } from '@/lib/store';
 import type { CategoryId, DateFilter, SortBy } from '@/lib/types';
@@ -25,7 +27,7 @@ import type { CategoryId, DateFilter, SortBy } from '@/lib/types';
 export default function AlertasScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { location, filters, setFilters, resetFilters } = useStore();
+  const { location, filters, setFilters, resetFilters, pushEnabled, setPushEnabled } = useStore();
   const alerts = useAlertsNear(location, filters.radius, true);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -34,6 +36,16 @@ export default function AlertasScreen() {
 
   // El radio no cuenta como filtro: es un ajuste de zona, no se "quita".
   const clearFilters = () => setFilters({ categories: [], date: 'todo', onlyValidated: false });
+
+  const PUSH_ERRORS: Record<PushFailure, string> = {
+    denied: 'Activá las notificaciones de InfoBarrio en los ajustes del teléfono y volvé a intentarlo.',
+    'no-device': 'Las notificaciones no funcionan en el emulador: probalo en un teléfono.',
+    error: 'No pudimos activar los avisos. Revisá tu conexión e intentá de nuevo.',
+  };
+  async function togglePush(on: boolean) {
+    const failure = await setPushEnabled(on);
+    if (failure) Alert.alert('No se activaron los avisos', PUSH_ERRORS[failure]);
+  }
 
   const toggleCategory = (id: CategoryId) =>
     setFilters({
@@ -158,6 +170,19 @@ export default function AlertasScreen() {
               <Switch value={filters.onlyValidated} onValueChange={(v) => setFilters({ onlyValidated: v })} />
             </View>
 
+            {remoteEnabled && (
+              <View style={[styles.switchRow, styles.pushRow]}>
+                <View style={styles.flex}>
+                  <Text variant="bodyLarge">Avisarme de alertas cercanas</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Te notificamos las nuevas a menos de {formatRadius(filters.radius)}. Guardamos tu
+                    zona aproximada (~100 m), nunca tu posición exacta.
+                  </Text>
+                </View>
+                <Switch value={pushEnabled} onValueChange={togglePush} />
+              </View>
+            )}
+
             <View style={styles.actions}>
               <Button onPress={resetFilters}>Limpiar</Button>
               <Button mode="contained" onPress={() => setShowFilters(false)}>
@@ -190,6 +215,7 @@ const styles = StyleSheet.create({
   label: { marginTop: 16, marginBottom: 8 },
   radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   divider: { marginVertical: 16 },
+  pushRow: { marginTop: 16 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 24 },
 });

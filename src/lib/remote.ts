@@ -134,3 +134,32 @@ export async function reportRemote(alertId: string) {
   const { error } = await client().from('reports').insert({ alert_id: alertId });
   if (error && error.code !== DUPLICATE) throw error;
 }
+
+// ───────────── Notificaciones push ─────────────
+
+// ~100 m de precisión: el servidor solo necesita saber la zona, no tu posición exacta.
+const roundZone = (n: number) => Math.round(n * 1000) / 1000;
+
+/** Guarda (o actualiza) el token de este dispositivo con su zona aproximada y su radio de aviso. */
+export async function savePushRegistration(input: { token: string; center: Coords; radius: number }) {
+  const { error } = await client()
+    .from('push_tokens')
+    .upsert({
+      user_id: (await client().auth.getSession()).data.session?.user.id,
+      token: input.token,
+      latitude: roundZone(input.center.latitude),
+      longitude: roundZone(input.center.longitude),
+      radius_m: input.radius,
+      enabled: true,
+      updated_at: new Date().toISOString(),
+    });
+  if (error) throw error;
+}
+
+/** Deja de recibir avisos sin borrar el token (reactivarlo es solo volver a guardar). */
+export async function disablePushRegistration() {
+  const userId = (await client().auth.getSession()).data.session?.user.id;
+  if (!userId) return;
+  const { error } = await client().from('push_tokens').update({ enabled: false }).eq('user_id', userId);
+  if (error) throw error;
+}

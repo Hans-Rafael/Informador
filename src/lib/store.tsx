@@ -5,12 +5,15 @@ import { AppState } from 'react-native';
 
 import { HIDDEN_REPORTS_THRESHOLD, VALIDATED_THRESHOLD } from './categories';
 import { DEFAULT_COORDS, distanceMeters } from './geo';
+import { getPushToken, type PushFailure } from './push';
 import {
+  disablePushRegistration,
   ensureUser,
   fetchAlerts,
   fetchMyVotes,
   publishRemote,
   reportRemote,
+  savePushRegistration,
   validateRemote,
   type NewAlert,
 } from './remote';
@@ -28,6 +31,8 @@ type PersistedState = {
   reportedIds: string[];
   /** false hasta que se completa la pantalla de bienvenida (primer uso). */
   onboarded: boolean;
+  /** Recibir avisos de alertas nuevas dentro de tu radio (requiere servidor y permiso). */
+  pushEnabled: boolean;
 };
 
 const DEFAULT_FILTERS: Filters = {
@@ -47,6 +52,10 @@ type Store = PersistedState & {
   refreshLocation: () => Promise<void>;
   /** Termina la bienvenida: pide la ubicación (si se acepta) y crea las alertas de ejemplo a su alrededor. */
   completeOnboarding: (askLocation: boolean) => Promise<void>;
+  /** Activa o desactiva los avisos. Devuelve null si salió bien o el motivo del fallo. */
+  setPushEnabled: (on: boolean) => Promise<PushFailure | null>;
+  /** Vuelve a bajar las alertas del servidor (p. ej. al abrir una desde una notificación). */
+  refreshAlerts: () => Promise<void>;
   /** Con servidor puede fallar (sin conexión): quien llama debe capturar el error. */
   publishAlert: (alert: NewAlert) => Promise<Alert>;
   validateAlert: (id: string) => void;
@@ -70,6 +79,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     validatedIds: [],
     reportedIds: [],
     onboarded: true,
+    pushEnabled: false,
   });
   const [location, setLocation] = useState<Coords>(DEFAULT_COORDS);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -90,6 +100,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch {
       // sin conexión o servidor caído: se reintenta en el próximo ciclo
     }
+  }
+
+  const pushTokenRef = useRef<string | null>(null);
+
+  /** Pide permiso y token; si todo va bien deja los avisos activados (el efecto de abajo los registra). */
+  async function enablePush(): Promise<PushFailure | null> {
+    if (!remoteEnabled) return 'error';
+    const result = await getPushToken(true);
+    if ('failure' in result) return result.failure;
+    pushTokenRef.current = result.token;
+    setState((s) => ({ ...s, pushEnabled: true }));
+    return null;
   }
 
   async function refreshLocation(): Promise<Coords> {
@@ -131,6 +153,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         validatedIds: remoteEnabled ? [] : saved?.validatedIds ?? [],
         reportedIds: remoteEnabled ? [] : saved?.reportedIds ?? [],
         onboarded,
+        pushEnabled: remoteEnabled && (saved?.pushEnabled ?? false),
       });
       setReady(true);
     })();
@@ -146,6 +169,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (ready && state.onboarded) syncRemote(location);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, state.onboarded, locationKey]);
+
+  // Mantiene el servidor al día con tu zona y radio para saber a quién avisar de cada alerta nueva.
+  useEffect(() => {
+    if (!remoteEnabled || !ready || !state.onboarded || !state.pushEnabled) return;
+    (async () => {
+      try {
+        if (!pushTokenRef.current) {
+          const result = await getPushToken(false);
+          if ('failure' in result) return;
+          pushTokenRef.current = result.token;
+        }
+        if (!(userIdRef.current ?? (await ensureUser()))) return;
+        await savePushRegistration({
+          token: pushTokenRef.current,
+          center: locationRef.current,
+          radius: state.filters.radius,
+        });
+      } catch {
+        // sin conexión: se reintenta cuando cambie la zona o el radio, o al reabrir la app
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, state.onboarded, state.pushEnabled, state.filters.radius, locationKey]);
 
   // Alertas nuevas de otros vecinos: en vivo, al volver a la app y cada minuto como respaldo.
   useEffect(() => {
@@ -181,7 +227,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         onboarded: true,
         alerts: remoteEnabled || s.alerts.length > 0 ? s.alerts : seedAlerts(coords),
       }));
+      // Quien acepta la ubicación en la bienvenida también recibe avisos (si da el permiso).
+      if (askLocation && remoteEnabled) void enablePush();
     },
+    setPushEnabled: async (on) => {
+      if (on) return enablePush();
+      setState((s) => ({ ...s, pushEnabled: false }));
+      disablePushRegistration().catch(() => {});
+      return null;
+    },
+    refreshAlerts: () => syncRemote(locationRef.current),
     publishAlert: async (input) => {
       if (remoteEnabled) {
         const uid = userIdRef.current ?? (await ensureUser());

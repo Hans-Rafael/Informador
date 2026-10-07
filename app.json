@@ -47,6 +47,13 @@
           "photosPermission": "InfoBarrio necesita acceso a tus fotos para adjuntarlas a tus noticias.",
           "cameraPermission": "InfoBarrio necesita la cámara para que saques fotos de lo que está pasando."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#006874"
+        }
       ]
     ],
     "experiments": {

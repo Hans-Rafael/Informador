@@ -5,11 +5,14 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 
+import { PushBridge } from '@/components/push-bridge';
 import { Welcome } from '@/components/welcome';
+import { configureNotifications } from '@/lib/push';
 import { StoreProvider, useStore } from '@/lib/store';
 import { navDark, navLight, paperDark, paperLight } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
+configureNotifications();
 
 function RootStack() {
   const { ready, onboarded } = useStore();
@@ -22,12 +25,15 @@ function RootStack() {
   if (!onboarded) return <Welcome />;
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="alerta/[id]" />
-      <Stack.Screen name="compartir" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="sitio-nuevo" options={{ presentation: 'modal' }} />
-    </Stack>
+    <>
+      <PushBridge />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="alerta/[id]" />
+        <Stack.Screen name="compartir" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="sitio-nuevo" options={{ presentation: 'modal' }} />
+      </Stack>
+    </>
   );
 }
 

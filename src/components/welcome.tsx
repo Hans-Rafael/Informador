@@ -4,6 +4,7 @@ import { Button, Icon, Text, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useStore } from '@/lib/store';
+import { remoteEnabled } from '@/lib/supabase';
 
 const POINTS = [
   { icon: 'map-marker-radius', text: 'Mirá qué está pasando a la vuelta de tu esquina.' },
@@ -55,8 +56,10 @@ export function Welcome() {
         <View style={[styles.why, { backgroundColor: theme.colors.surfaceVariant }]}>
           <Icon source="crosshairs-gps" size={22} color={theme.colors.onSurfaceVariant} />
           <Text variant="bodyMedium" style={[styles.pointText, { color: theme.colors.onSurfaceVariant }]}>
-            Usamos tu ubicación para mostrarte las alertas cercanas y ubicar lo que compartas. Podés
-            cambiar el radio cuando quieras.
+            Usamos tu ubicación para mostrarte las alertas cercanas y ubicar lo que compartas.
+            {remoteEnabled
+              ? ' También te avisamos cuando haya algo nuevo cerca: guardamos solo tu zona aproximada, nunca tu posición exacta.'
+              : ' Podés cambiar el radio cuando quieras.'}
           </Text>
         </View>
       </ScrollView>
