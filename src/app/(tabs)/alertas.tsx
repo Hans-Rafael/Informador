@@ -116,13 +116,21 @@ export default function AlertasScreen() {
           <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.sheetHeader}>
-              <Text variant="titleLarge">Filtros</Text>
+              {/* TEMPORAL: en rojo para comprobar que la app carga el código nuevo. */}
+              <Text variant="titleLarge" style={{ color: '#E53935' }}>
+                Filtros
+              </Text>
               <IconButton
                 icon="close"
                 onPress={() => setShowFilters(false)}
                 accessibilityLabel="Cerrar filtros"
               />
             </View>
+
+            {/* Indica con qué datos trabaja la app: útil para saber si las claves de Supabase llegaron. */}
+            <Text variant="labelSmall" style={[styles.modeCaption, { color: theme.colors.onSurfaceVariant }]}>
+              {remoteEnabled ? 'Conectado a Supabase' : 'Modo local: sin servidor, sin avisos'}
+            </Text>
 
             <Text variant="titleSmall" style={styles.label}>Fecha</Text>
             <SegmentedButtons
@@ -189,11 +197,6 @@ export default function AlertasScreen() {
                 Ver {alerts.length} {alerts.length === 1 ? 'resultado' : 'resultados'}
               </Button>
             </View>
-
-            {/* Indica con qué datos trabaja la app: útil para saber si las claves de Supabase llegaron. */}
-            <Text variant="labelSmall" style={[styles.modeCaption, { color: theme.colors.onSurfaceVariant }]}>
-              {remoteEnabled ? 'Conectado a Supabase' : 'Modo local: sin servidor, sin avisos'}
-            </Text>
           </ScrollView>
         </View>
       </Modal>
@@ -221,7 +224,7 @@ const styles = StyleSheet.create({
   radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   divider: { marginVertical: 16 },
   pushRow: { marginTop: 16 },
-  modeCaption: { textAlign: 'center', marginTop: 8 },
+  modeCaption: { marginTop: -4 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 24 },
 });
