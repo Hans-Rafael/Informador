@@ -15,6 +15,8 @@ type PersistedState = {
   filters: Filters;
   validatedIds: string[];
   reportedIds: string[];
+  /** false hasta que se completa la pantalla de bienvenida (primer uso). */
+  onboarded: boolean;
 };
 
 const DEFAULT_FILTERS: Filters = {
@@ -34,6 +36,8 @@ type Store = PersistedState & {
   /** true mientras se busca la ubicación (para mostrar un indicador de carga). */
   locating: boolean;
   refreshLocation: () => Promise<void>;
+  /** Termina la bienvenida: pide la ubicación (si se acepta) y crea las alertas de ejemplo a su alrededor. */
+  completeOnboarding: (askLocation: boolean) => Promise<void>;
   publishAlert: (alert: NewAlert) => Alert;
   validateAlert: (id: string) => void;
   reportAlert: (id: string) => void;
@@ -55,6 +59,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     filters: DEFAULT_FILTERS,
     validatedIds: [],
     reportedIds: [],
+    onboarded: true,
   });
   const [location, setLocation] = useState<Coords>(DEFAULT_COORDS);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -85,17 +90,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [raw, coords] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEY).catch(() => null),
-        refreshLocation(),
-      ]);
+      const raw = await AsyncStorage.getItem(STORAGE_KEY).catch(() => null);
       const saved: Partial<PersistedState> | null = raw ? JSON.parse(raw) : null;
+      // Quien ya tenía datos guardados no ve la bienvenida; en el primer uso aún no se pide la
+      // ubicación: se hace desde la bienvenida, tras explicar para qué se usa.
+      const onboarded = saved ? (saved.onboarded ?? true) : false;
+      const coords = onboarded ? await refreshLocation() : DEFAULT_COORDS;
       setState({
-        alerts: saved?.alerts ?? seedAlerts(coords),
+        alerts: saved?.alerts ?? (onboarded ? seedAlerts(coords) : []),
         sites: saved?.sites ?? [],
         filters: { ...DEFAULT_FILTERS, ...saved?.filters },
         validatedIds: saved?.validatedIds ?? [],
         reportedIds: saved?.reportedIds ?? [],
+        onboarded,
       });
       setReady(true);
     })();
@@ -113,6 +120,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     locating,
     refreshLocation: async () => {
       await refreshLocation();
+    },
+    completeOnboarding: async (askLocation) => {
+      const coords = askLocation ? await refreshLocation() : DEFAULT_COORDS;
+      setState((s) => ({
+        ...s,
+        onboarded: true,
+        alerts: s.alerts.length > 0 ? s.alerts : seedAlerts(coords),
+      }));
     },
     publishAlert: (input) => {
       const alert: Alert = {

@@ -5,19 +5,21 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 
+import { Welcome } from '@/components/welcome';
 import { StoreProvider, useStore } from '@/lib/store';
 import { navDark, navLight, paperDark, paperLight } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync();
 
 function RootStack() {
-  const { ready } = useStore();
+  const { ready, onboarded } = useStore();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
   if (!ready) return null;
+  if (!onboarded) return <Welcome />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
