@@ -5,6 +5,7 @@ import {
   Button,
   Chip,
   Divider,
+  IconButton,
   SegmentedButtons,
   Switch,
   Text,
@@ -102,7 +103,14 @@ export default function AlertasScreen() {
         >
           <View style={[styles.handle, { backgroundColor: theme.colors.outlineVariant }]} />
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text variant="titleLarge">Filtros</Text>
+            <View style={styles.sheetHeader}>
+              <Text variant="titleLarge">Filtros</Text>
+              <IconButton
+                icon="close"
+                onPress={() => setShowFilters(false)}
+                accessibilityLabel="Cerrar filtros"
+              />
+            </View>
 
             <Text variant="titleSmall" style={styles.label}>Fecha</Text>
             <SegmentedButtons
@@ -176,6 +184,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
+  // Margen negativo para que la X quede alineada con el borde derecho del contenido.
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -12 },
   handle: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, marginBottom: 12 },
   label: { marginTop: 16, marginBottom: 8 },
   radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
