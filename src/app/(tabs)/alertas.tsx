@@ -49,7 +49,13 @@ export default function AlertasScreen() {
       </Appbar.Header>
 
       {/* Acceso rápido por categoría */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      {/* flexGrow: 0 evita que el ScrollView horizontal ocupe todo el alto libre y estire los chips. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipsScroll}
+        contentContainerStyle={styles.chips}
+      >
         {CATEGORIES.map((c) => (
           <Chip
             key={c.id}
@@ -119,7 +125,12 @@ export default function AlertasScreen() {
             <SegmentedButtons
               value={String(filters.radius)}
               onValueChange={(v) => setFilters({ radius: Number(v) })}
-              buttons={RADIUS_OPTIONS.map((r) => ({ value: String(r), label: formatDistance(r) }))}
+              // Sin el check de selección y con etiquetas cortas, los 4 radios caben sin recortarse.
+              buttons={RADIUS_OPTIONS.map((r) => ({
+                value: String(r),
+                label: r < 1000 ? `${r} m` : `${r / 1000} km`,
+                showSelectedCheck: false,
+              }))}
             />
 
             <Text variant="titleSmall" style={styles.label}>Ordenar por</Text>
@@ -146,7 +157,7 @@ export default function AlertasScreen() {
             <View style={styles.actions}>
               <Button onPress={resetFilters}>Limpiar</Button>
               <Button mode="contained" onPress={() => setShowFilters(false)}>
-                Ver {alerts.length} resultados
+                Ver {alerts.length} {alerts.length === 1 ? 'resultado' : 'resultados'}
               </Button>
             </View>
           </ScrollView>
@@ -158,6 +169,7 @@ export default function AlertasScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  chipsScroll: { flexGrow: 0 },
   chips: { gap: 8, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { paddingHorizontal: 16, paddingBottom: 8 },
   list: { paddingBottom: 16 },
