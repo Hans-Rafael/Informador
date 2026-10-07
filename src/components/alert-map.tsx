@@ -4,6 +4,7 @@ import { ActivityIndicator, Button, Card, Icon, IconButton, Text, useTheme } fro
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
 import { categoryTextColor, getCategory, SITE_TYPES } from '@/lib/categories';
+import { isOnline } from '@/lib/connectivity';
 import { MAP_ICON_PATHS } from '@/lib/map-icons';
 import { distanceMeters, formatDistance } from '@/lib/geo';
 import { useStore } from '@/lib/store';
@@ -28,6 +29,10 @@ export type AlertMapProps = {
   interactive?: boolean;
   style?: StyleProp<ViewStyle>;
 };
+
+// Pide a Leaflet repintar los mosaicos (al volver el internet con el mapa ya cargado).
+const REDRAW = 'map.eachLayer(function (l) { if (l.redraw) l.redraw(); }); true;';
+const RECHECK_MS = 10000;
 
 // Mapa con Leaflet + OpenStreetMap dentro de un WebView: gratis y sin API key de Google.
 // El HTML es fijo; los datos llegan por mensajes (así el mapa no se recarga en cada cambio).
@@ -106,7 +111,10 @@ export function AlertMap({
   const { location: user } = useStore();
   const ref = useRef<RNWebView>(null);
   const ready = useRef(false);
+  const probing = useRef(false);
   const [status, setStatus] = useState<'loading' | 'ok' | 'offline'>('loading');
+  // Mapa ya cargado pero sin poder bajar mosaicos nuevos (se cortó el internet).
+  const [partial, setPartial] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [selectedId, setSelectedId] = useState<string>();
   const selected = alerts.find((a) => a.id === selectedId);
@@ -156,9 +164,22 @@ export function AlertMap({
 
   const retry = () => {
     ready.current = false;
+    setPartial(false);
     setStatus('loading');
     setAttempt((n) => n + 1);
   };
+
+  // Mientras no haya conexión, miramos cada pocos segundos si volvió y recuperamos el mapa solos.
+  useEffect(() => {
+    if (status !== 'offline' && !partial) return;
+    const id = setInterval(async () => {
+      if (!(await isOnline())) return;
+      if (status === 'offline') retry();
+      else ref.current?.injectJavaScript(REDRAW);
+    }, RECHECK_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, partial]);
 
   const send = () => ref.current?.injectJavaScript(`render(${payload});true;`);
 
@@ -174,8 +195,16 @@ export function AlertMap({
       send();
     } else if (msg.type === 'tiles') {
       setStatus('ok');
+      setPartial(false);
     } else if (msg.type === 'tileerror') {
-      setStatus((s) => (s === 'ok' ? s : 'offline'));
+      if (status !== 'ok') setStatus('offline');
+      else if (!probing.current) {
+        // Un mosaico suelto puede fallar con internet; solo avisamos si de verdad no hay conexión.
+        probing.current = true;
+        isOnline()
+          .then((online) => !online && setPartial(true))
+          .finally(() => (probing.current = false));
+      }
     } else if (msg.type === 'pick') {
       onPick?.({ latitude: msg.latitude, longitude: msg.longitude });
     } else if (msg.type === 'select') {
@@ -213,7 +242,7 @@ export function AlertMap({
             <>
               <Icon source="wifi-off" size={32} color={theme.colors.onSurfaceVariant} />
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                No se pudo cargar el mapa. Revisá tu conexión.
+                Sin conexión: el mapa necesita internet. Volverá solo cuando la recuperes.
               </Text>
               <Button mode="contained-tonal" icon="refresh" onPress={retry} compact>
                 Reintentar
@@ -223,8 +252,22 @@ export function AlertMap({
         </View>
       )}
 
+      {partial && status === 'ok' && (
+        <View
+          pointerEvents="none"
+          style={[styles.pill, { backgroundColor: theme.colors.surfaceVariant }]}
+          accessible
+          accessibilityRole="alert"
+        >
+          <Icon source="wifi-off" size={16} color={theme.colors.onSurfaceVariant} />
+          <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Sin conexión · el mapa puede verse incompleto
+          </Text>
+        </View>
+      )}
+
       {selected && selectedCategory && onOpenAlert && (
-        <Card mode="elevated" style={styles.miniCard} onPress={() => onOpenAlert(selected)}>
+        <Card mode="elevated" style={[styles.miniCard, partial && styles.miniCardLow]} onPress={() => onOpenAlert(selected)}>
           <View style={styles.miniRow}>
             <Icon source={selectedCategory.icon} size={28} color={categoryTextColor(selected.category, theme.dark)} />
             <View style={styles.miniText}>
@@ -245,7 +288,9 @@ export function AlertMap({
 
 const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 8, padding: 24 },
+  pill: { position: 'absolute', top: 12, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, elevation: 4 },
   miniCard: { position: 'absolute', top: 12, left: 12, right: 12 },
+  miniCardLow: { top: 52 },
   miniRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 16 },
   miniText: { flex: 1 },
 });
