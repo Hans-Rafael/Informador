@@ -131,12 +131,16 @@ export default function AlertaScreen() {
               title={alert.author.name}
               subtitle={`${alert.author.contributions} aportes a la comunidad`}
               left={(props) => <Avatar.Text {...props} label={alert.author.name.slice(0, 1)} />}
-              right={() => (
-                <View style={[styles.row, styles.rating]}>
-                  <Icon source="star" size={18} color="#F9A825" />
-                  <Text variant="titleMedium">{alert.author.rating.toFixed(1)}</Text>
-                </View>
-              )}
+              right={
+                alert.author.rating === undefined
+                  ? undefined
+                  : () => (
+                      <View style={[styles.row, styles.rating]}>
+                        <Icon source="star" size={18} color="#F9A825" />
+                        <Text variant="titleMedium">{alert.author.rating?.toFixed(1)}</Text>
+                      </View>
+                    )
+              }
             />
             <Card.Content style={styles.validation}>
               <View style={styles.rowBetween}>

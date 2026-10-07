@@ -10,7 +10,10 @@ export type Alert = {
   imageUri?: string;
   coords: Coords;
   createdAt: number;
-  author: { name: string; rating: number; contributions: number };
+  /** rating solo existe en las alertas de ejemplo; con servidor todavía no se calcula. */
+  author: { name: string; rating?: number; contributions: number };
+  /** Id del autor en el servidor (para contar sus aportes). */
+  authorId?: string;
   validations: number;
   reports: number;
   mine?: boolean;

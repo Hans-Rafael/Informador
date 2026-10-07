@@ -39,6 +39,7 @@ export default function CompartirScreen() {
   const [submitted, setSubmitted] = useState(false);
   const [message, setMessage] = useState('');
   const [picking, setPicking] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [draft, setDraft] = useState<Coords | null>(null);
 
   const errors = {
@@ -63,16 +64,25 @@ export default function CompartirScreen() {
     if (!result.canceled) setImageUri(result.assets[0].uri);
   }
 
-  function publish() {
+  async function publish() {
     setSubmitted(true);
-    if (!valid || !category) return;
-    const alert = publishAlert({
-      category,
-      title: title.trim(),
-      description: description.trim(),
-      imageUri,
-      coords: coords ?? location,
-    });
+    if (!valid || !category || publishing) return;
+    setPublishing(true);
+    let alert;
+    try {
+      alert = await publishAlert({
+        category,
+        title: title.trim(),
+        description: description.trim(),
+        imageUri,
+        coords: coords ?? location,
+      });
+    } catch {
+      setMessage('No pudimos publicar. Revisá tu conexión e intentá de nuevo.');
+      return;
+    } finally {
+      setPublishing(false);
+    }
     setCategory(null);
     setTitle('');
     setDescription('');
@@ -195,7 +205,15 @@ export default function CompartirScreen() {
           {coords ? 'Cambiar ubicación' : 'Elegir en el mapa'}
         </Button>
 
-        <Button mode="contained" icon="send" onPress={publish} style={styles.publish} contentStyle={styles.publishContent}>
+        <Button
+          mode="contained"
+          icon="send"
+          loading={publishing}
+          disabled={publishing}
+          onPress={publish}
+          style={styles.publish}
+          contentStyle={styles.publishContent}
+        >
           Publicar
         </Button>
       </ScrollView>

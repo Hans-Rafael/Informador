@@ -40,8 +40,13 @@ pnpm start      # escanear el QR con Expo Go
 | Mis sitios | ✅ |
 | Notificaciones en tiempo real | ⏳ requiere backend |
 
-Los datos se guardan solo en el teléfono. Para compartir alertas entre usuarios y enviar
-notificaciones hace falta un backend (por ejemplo Supabase o Firebase).
+## Datos compartidos (Supabase)
+
+Sin configurar nada, los datos se guardan solo en el teléfono (modo local, con alertas de ejemplo).
+Para compartir alertas entre vecinos la app usa **Supabase** (plan gratuito): sigue los pasos de
+[`supabase/README.md`](supabase/README.md) y crea un `.env` con `EXPO_PUBLIC_SUPABASE_URL` y
+`EXPO_PUBLIC_SUPABASE_ANON_KEY`. Con las claves puestas, la app pasa sola a modo servidor.
+Las notificaciones push siguen pendientes.
 
 ## Generar la APK (EAS Build)
 

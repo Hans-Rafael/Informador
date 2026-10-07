@@ -1,10 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AppState } from 'react-native';
 
 import { HIDDEN_REPORTS_THRESHOLD, VALIDATED_THRESHOLD } from './categories';
 import { DEFAULT_COORDS, distanceMeters } from './geo';
+import {
+  ensureUser,
+  fetchAlerts,
+  fetchMyVotes,
+  publishRemote,
+  reportRemote,
+  validateRemote,
+  type NewAlert,
+} from './remote';
 import { seedAlerts } from './seed';
+import { remoteEnabled, supabase } from './supabase';
 import type { Alert, Coords, Filters, Site } from './types';
 
 const STORAGE_KEY = 'infobarrio:v1';
@@ -27,8 +38,6 @@ const DEFAULT_FILTERS: Filters = {
   sortBy: 'fecha',
 };
 
-type NewAlert = Pick<Alert, 'category' | 'title' | 'description' | 'imageUri' | 'coords'>;
-
 type Store = PersistedState & {
   ready: boolean;
   location: Coords;
@@ -38,7 +47,8 @@ type Store = PersistedState & {
   refreshLocation: () => Promise<void>;
   /** Termina la bienvenida: pide la ubicación (si se acepta) y crea las alertas de ejemplo a su alrededor. */
   completeOnboarding: (askLocation: boolean) => Promise<void>;
-  publishAlert: (alert: NewAlert) => Alert;
+  /** Con servidor puede fallar (sin conexión): quien llama debe capturar el error. */
+  publishAlert: (alert: NewAlert) => Promise<Alert>;
   validateAlert: (id: string) => void;
   reportAlert: (id: string) => void;
   addSite: (site: Omit<Site, 'id'>) => void;
@@ -64,6 +74,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [location, setLocation] = useState<Coords>(DEFAULT_COORDS);
   const [locationGranted, setLocationGranted] = useState(false);
   const [locating, setLocating] = useState(false);
+  const userIdRef = useRef<string | null>(null);
+  const locationRef = useRef(location);
+  locationRef.current = location;
+
+  // Con servidor, la verdad está allí: bajamos alertas y tus votos. Si falla (sin red), se queda lo que había.
+  async function syncRemote(center: Coords) {
+    if (!remoteEnabled) return;
+    try {
+      const uid = userIdRef.current ?? (await ensureUser());
+      if (!uid) return;
+      userIdRef.current = uid;
+      const [alerts, votes] = await Promise.all([fetchAlerts(center, uid), fetchMyVotes()]);
+      setState((s) => ({ ...s, alerts, ...votes }));
+    } catch {
+      // sin conexión o servidor caído: se reintenta en el próximo ciclo
+    }
+  }
 
   async function refreshLocation(): Promise<Coords> {
     setLocating(true);
@@ -97,11 +124,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const onboarded = saved ? (saved.onboarded ?? true) : false;
       const coords = onboarded ? await refreshLocation() : DEFAULT_COORDS;
       setState({
-        alerts: saved?.alerts ?? (onboarded ? seedAlerts(coords) : []),
+        // Con servidor se ignoran las alertas y votos guardados en el teléfono (eran de pruebas locales).
+        alerts: remoteEnabled ? [] : saved?.alerts ?? (onboarded ? seedAlerts(coords) : []),
         sites: saved?.sites ?? [],
         filters: { ...DEFAULT_FILTERS, ...saved?.filters },
-        validatedIds: saved?.validatedIds ?? [],
-        reportedIds: saved?.reportedIds ?? [],
+        validatedIds: remoteEnabled ? [] : saved?.validatedIds ?? [],
+        reportedIds: remoteEnabled ? [] : saved?.reportedIds ?? [],
         onboarded,
       });
       setReady(true);
@@ -111,6 +139,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(state)).catch(() => {});
   }, [ready, state]);
+
+  // Sincroniza al abrir y cuando te mueves unos ~100 m.
+  const locationKey = `${location.latitude.toFixed(3)},${location.longitude.toFixed(3)}`;
+  useEffect(() => {
+    if (ready && state.onboarded) syncRemote(location);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, state.onboarded, locationKey]);
+
+  // Alertas nuevas de otros vecinos: en vivo, al volver a la app y cada minuto como respaldo.
+  useEffect(() => {
+    if (!supabase || !ready || !state.onboarded) return;
+    const refetch = () => syncRemote(locationRef.current);
+    const channel = supabase
+      .channel('alerts-feed')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, refetch)
+      .subscribe();
+    const appState = AppState.addEventListener('change', (next) => next === 'active' && refetch());
+    const timer = setInterval(refetch, 60000);
+    return () => {
+      supabase?.removeChannel(channel);
+      appState.remove();
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, state.onboarded]);
 
   const store: Store = {
     ...state,
@@ -126,10 +179,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({
         ...s,
         onboarded: true,
-        alerts: s.alerts.length > 0 ? s.alerts : seedAlerts(coords),
+        alerts: remoteEnabled || s.alerts.length > 0 ? s.alerts : seedAlerts(coords),
       }));
     },
-    publishAlert: (input) => {
+    publishAlert: async (input) => {
+      if (remoteEnabled) {
+        const uid = userIdRef.current ?? (await ensureUser());
+        if (!uid) throw new Error('No se pudo identificar al dispositivo');
+        userIdRef.current = uid;
+        const published = await publishRemote(input, uid);
+        setState((s) => ({ ...s, alerts: [published, ...s.alerts] }));
+        return published;
+      }
       const alert: Alert = {
         ...input,
         id: newId(),
@@ -142,24 +203,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setState((s) => ({ ...s, alerts: [alert, ...s.alerts] }));
       return alert;
     },
-    validateAlert: (id) =>
-      setState((s) => {
-        if (s.validatedIds.includes(id)) return s;
-        return {
-          ...s,
-          validatedIds: [...s.validatedIds, id],
-          alerts: s.alerts.map((a) => (a.id === id ? { ...a, validations: a.validations + 1 } : a)),
-        };
-      }),
-    reportAlert: (id) =>
-      setState((s) => {
-        if (s.reportedIds.includes(id)) return s;
-        return {
-          ...s,
-          reportedIds: [...s.reportedIds, id],
-          alerts: s.alerts.map((a) => (a.id === id ? { ...a, reports: a.reports + 1 } : a)),
-        };
-      }),
+    // Validar y reportar se reflejan al instante; con servidor, si este los rechaza (sin red o
+    // porque la alerta es tuya) se deshace el cambio.
+    validateAlert: (id) => {
+      if (state.validatedIds.includes(id)) return;
+      setState((s) => ({
+        ...s,
+        validatedIds: [...s.validatedIds, id],
+        alerts: s.alerts.map((a) => (a.id === id ? { ...a, validations: a.validations + 1 } : a)),
+      }));
+      if (remoteEnabled) {
+        validateRemote(id).catch(() =>
+          setState((s) => ({
+            ...s,
+            validatedIds: s.validatedIds.filter((x) => x !== id),
+            alerts: s.alerts.map((a) => (a.id === id ? { ...a, validations: a.validations - 1 } : a)),
+          })),
+        );
+      }
+    },
+    reportAlert: (id) => {
+      if (state.reportedIds.includes(id)) return;
+      setState((s) => ({
+        ...s,
+        reportedIds: [...s.reportedIds, id],
+        alerts: s.alerts.map((a) => (a.id === id ? { ...a, reports: a.reports + 1 } : a)),
+      }));
+      if (remoteEnabled) {
+        reportRemote(id).catch(() =>
+          setState((s) => ({
+            ...s,
+            reportedIds: s.reportedIds.filter((x) => x !== id),
+            alerts: s.alerts.map((a) => (a.id === id ? { ...a, reports: a.reports - 1 } : a)),
+          })),
+        );
+      }
+    },
     addSite: (site) => setState((s) => ({ ...s, sites: [...s.sites, { ...site, id: newId() }] })),
     removeSite: (id) => setState((s) => ({ ...s, sites: s.sites.filter((x) => x.id !== id) })),
     setFilters: (filters) => setState((s) => ({ ...s, filters: { ...s.filters, ...filters } })),
