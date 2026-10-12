@@ -24,7 +24,7 @@ Capturas: súbelas a docs/screenshots/ y descomenta.
 | Selección de categoría | ✅ |
 | Filtros por categoría, fecha, cercanía, validadas y orden | ✅ |
 | Validación de noticias entre vecinos | ✅ |
-| Moderación y reporte de contenido (se oculta con 3 reportes) | ✅ |
+| Moderación y reporte de contenido, con reglas distintas por tipo de reporte | ✅ |
 | Mis sitios (casa, trabajo y lugares de interés) | ✅ |
 | Alertas compartidas entre usuarios (Supabase, en tiempo real) | ✅ |
 | Pantalla de bienvenida y aviso de sin conexión en el mapa | ✅ |
@@ -148,6 +148,18 @@ El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 - **Filtros dentro de Alertas**, como recomendó el card sorting.
 - **Color de alerta por categoría** (rojo para seguridad, naranja para tránsito…), como proponía el user journey.
 - **Nombre InfoBarrio**, elegido por los usuarios en la encuesta de naming.
+
+## Moderación
+
+Cada reporte lleva un tipo, y el tipo decide cuánto pesa:
+
+| Tipo de reporte | Se oculta cuando… |
+| --- | --- |
+| Contenido ofensivo | hay **2** reportes, aunque tenga validaciones |
+| Información falsa y spam | suman **3 o más** reportes **y** más reportes que validaciones |
+| Ubicación incorrecta | nunca: la noticia puede ser cierta, solo se cuenta |
+
+Así una noticia confirmada por varios vecinos no cae por unos pocos reportes, y un usuario no puede reportar más de 20 veces al día. La alerta se oculta, no se borra: queda para revisarla con la vista `alerts_reported` en el panel de Supabase, y la caducidad la elimina después.
 
 ## Caducidad de las alertas
 

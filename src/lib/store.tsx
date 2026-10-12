@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { HIDDEN_REPORTS_THRESHOLD, VALIDATED_THRESHOLD } from './categories';
+import { HIDDEN_OFFENSIVE_THRESHOLD, HIDDEN_REPORTS_THRESHOLD, noReports, VALIDATED_THRESHOLD } from './categories';
 import { DEFAULT_COORDS, distanceMeters } from './geo';
 import { getPushToken, type PushFailure } from './push';
 import {
@@ -19,7 +19,7 @@ import {
 } from './remote';
 import { seedAlerts } from './seed';
 import { remoteEnabled, supabase } from './supabase';
-import type { Alert, Coords, Filters, Site } from './types';
+import type { Alert, Coords, Filters, ReportKind, Site } from './types';
 
 const STORAGE_KEY = 'infobarrio:v1';
 
@@ -59,7 +59,7 @@ type Store = PersistedState & {
   /** Con servidor puede fallar (sin conexión): quien llama debe capturar el error. */
   publishAlert: (alert: NewAlert) => Promise<Alert>;
   validateAlert: (id: string) => void;
-  reportAlert: (id: string) => void;
+  reportAlert: (id: string, kind: ReportKind) => void;
   addSite: (site: Omit<Site, 'id'>) => void;
   removeSite: (id: string) => void;
   setFilters: (filters: Partial<Filters>) => void;
@@ -252,7 +252,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: Date.now(),
         author: { name: 'Vos', rating: 5, contributions: state.alerts.filter((a) => a.mine).length + 1 },
         validations: 0,
-        reports: 0,
+        reports: noReports(),
         mine: true,
       };
       setState((s) => ({ ...s, alerts: [alert, ...s.alerts] }));
@@ -277,19 +277,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    reportAlert: (id) => {
+    reportAlert: (id, kind) => {
       if (state.reportedIds.includes(id)) return;
+      const bump = (delta: number) => (a: Alert) =>
+        a.id === id ? { ...a, reports: { ...a.reports, [kind]: a.reports[kind] + delta } } : a;
       setState((s) => ({
         ...s,
         reportedIds: [...s.reportedIds, id],
-        alerts: s.alerts.map((a) => (a.id === id ? { ...a, reports: a.reports + 1 } : a)),
+        alerts: s.alerts.map(bump(1)),
       }));
       if (remoteEnabled) {
-        reportRemote(id).catch(() =>
+        reportRemote(id, kind).catch(() =>
           setState((s) => ({
             ...s,
             reportedIds: s.reportedIds.filter((x) => x !== id),
-            alerts: s.alerts.map((a) => (a.id === id ? { ...a, reports: a.reports - 1 } : a)),
+            alerts: s.alerts.map(bump(-1)),
           })),
         );
       }
@@ -313,6 +315,17 @@ export function isValidated(alert: Alert) {
   return alert.validations >= VALIDATED_THRESHOLD;
 }
 
+// Moderación comunitaria. Igual que la vista alerts_feed del servidor: contenido ofensivo se oculta
+// con pocos reportes; falso y spam necesitan más reportes que validaciones; ubicación no oculta.
+export function isHidden(alert: Alert) {
+  const { falsa, ofensivo, spam } = alert.reports;
+  const doubtful = falsa + spam;
+  return (
+    ofensivo >= HIDDEN_OFFENSIVE_THRESHOLD ||
+    (doubtful >= HIDDEN_REPORTS_THRESHOLD && doubtful > alert.validations)
+  );
+}
+
 // Las alertas de ejemplo (seed.ts) llevan id "seed-N": se marcan para no confundirlas con noticias reales.
 export function isDemo(alert: Alert) {
   return alert.id.startsWith('seed-');
@@ -328,7 +341,7 @@ export function useAlertsNear(center: Coords, radius: number, applyFilters = fal
     const minDate =
       filters.date === 'hoy' ? Date.now() - dayMs : filters.date === 'semana' ? Date.now() - 7 * dayMs : 0;
     const list = alerts
-      .filter((a) => a.reports < HIDDEN_REPORTS_THRESHOLD)
+      .filter((a) => !isHidden(a))
       .map((a) => ({ ...a, distance: distanceMeters(center, a.coords) }))
       .filter((a) => a.distance <= radius)
       .filter(

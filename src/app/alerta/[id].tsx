@@ -21,9 +21,10 @@ import {
 
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
-import { categoryTextColor, getCategory, HIDDEN_REPORTS_THRESHOLD, REPORT_REASONS, VALIDATED_THRESHOLD } from '@/lib/categories';
+import { categoryTextColor, getCategory, REPORT_KINDS, VALIDATED_THRESHOLD } from '@/lib/categories';
 import { distanceMeters, formatDistance, timeAgo } from '@/lib/geo';
-import { isDemo, isValidated, useStore } from '@/lib/store';
+import { isDemo, isHidden, isValidated, useStore } from '@/lib/store';
+import type { ReportKind } from '@/lib/types';
 
 export default function AlertaScreen() {
   const theme = useTheme();
@@ -34,12 +35,12 @@ export default function AlertaScreen() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reason, setReason] = useState(REPORT_REASONS[0]);
+  const [reportKind, setReportKind] = useState<ReportKind>(REPORT_KINDS[0].kind);
   const [message, setMessage] = useState('');
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  if (!alert || alert.reports >= HIDDEN_REPORTS_THRESHOLD) {
+  if (!alert || isHidden(alert)) {
     return (
       <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
@@ -185,9 +186,9 @@ export default function AlertaScreen() {
           <Dialog.Icon icon="flag" />
           <Dialog.Title style={styles.center}>Reportar contenido</Dialog.Title>
           <Dialog.Content>
-            <RadioButton.Group value={reason} onValueChange={setReason}>
-              {REPORT_REASONS.map((r) => (
-                <RadioButton.Item key={r} label={r} value={r} style={styles.radio} />
+            <RadioButton.Group value={reportKind} onValueChange={(v) => setReportKind(v as ReportKind)}>
+              {REPORT_KINDS.map((r) => (
+                <RadioButton.Item key={r.kind} label={r.label} value={r.kind} style={styles.radio} />
               ))}
             </RadioButton.Group>
           </Dialog.Content>
@@ -195,7 +196,7 @@ export default function AlertaScreen() {
             <Button onPress={() => setReportOpen(false)}>Cancelar</Button>
             <Button
               onPress={() => {
-                reportAlert(alert.id);
+                reportAlert(alert.id, reportKind);
                 setReportOpen(false);
                 setMessage('Reporte enviado. La comunidad revisará esta alerta.');
               }}

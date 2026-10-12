@@ -1,3 +1,4 @@
+import { noReports } from './categories';
 import { offset } from './geo';
 import type { Alert, Coords } from './types';
 
@@ -16,7 +17,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 12 * min,
       author: { name: 'Mateo R.', rating: 4.6, contributions: 23 },
       validations: 5,
-      reports: 0,
+      reports: noReports(),
     },
     {
       id: 'seed-2',
@@ -28,7 +29,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 3 * 60 * min,
       author: { name: 'Ana P.', rating: 4.9, contributions: 41 },
       validations: 8,
-      reports: 0,
+      reports: noReports(),
     },
     {
       id: 'seed-3',
@@ -40,7 +41,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 35 * min,
       author: { name: 'Pablo G.', rating: 4.1, contributions: 9 },
       validations: 2,
-      reports: 0,
+      reports: noReports(),
     },
     {
       id: 'seed-4',
@@ -52,7 +53,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 26 * 60 * min,
       author: { name: 'Laura M.', rating: 4.4, contributions: 15 },
       validations: 4,
-      reports: 0,
+      reports: noReports(),
     },
     {
       id: 'seed-5',
@@ -63,7 +64,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 90 * min,
       author: { name: 'Matías L.', rating: 3.8, contributions: 6 },
       validations: 1,
-      reports: 0,
+      reports: noReports(),
     },
     {
       id: 'seed-6',
@@ -74,7 +75,7 @@ export function seedAlerts(center: Coords): Alert[] {
       createdAt: now - 4 * 24 * 60 * min,
       author: { name: 'Mariana S.', rating: 4.7, contributions: 30 },
       validations: 6,
-      reports: 0,
+      reports: noReports(),
     },
   ];
 }

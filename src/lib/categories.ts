@@ -1,4 +1,4 @@
-import type { CategoryId, SiteType } from './types';
+import type { CategoryId, ReportKind, SiteType } from './types';
 
 // `color` para pines y fondos; `onDark` es el tono claro para texto sobre fondos oscuros.
 type CategoryInfo = { id: CategoryId; label: string; icon: string; color: string; onDark: string };
@@ -29,13 +29,20 @@ export const SITE_TYPES: Record<SiteType, { label: string; icon: string }> = {
 
 export const RADIUS_OPTIONS = [500, 1000, 3000, 10000];
 
-export const REPORT_REASONS = [
-  'Información falsa (fake news)',
-  'Contenido ofensivo o inapropiado',
-  'Spam o publicidad engañosa',
-  'Ubicación incorrecta',
+export const REPORT_KINDS: { kind: ReportKind; label: string }[] = [
+  { kind: 'falsa', label: 'Información falsa (fake news)' },
+  { kind: 'ofensivo', label: 'Contenido ofensivo o inapropiado' },
+  { kind: 'spam', label: 'Spam o publicidad engañosa' },
+  { kind: 'ubicacion', label: 'Ubicación incorrecta' },
 ];
 
 // Umbrales de moderación comunitaria.
 export const VALIDATED_THRESHOLD = 3;
+export function noReports(): Record<ReportKind, number> {
+  return { falsa: 0, ofensivo: 0, spam: 0, ubicacion: 0 };
+}
+
+// Ofensivo: se oculta con pocos reportes. Falso + spam: hacen falta más reportes que validaciones.
+// Ubicación incorrecta no oculta. Mismas reglas que la vista alerts_feed (supabase/schema.sql).
+export const HIDDEN_OFFENSIVE_THRESHOLD = 2;
 export const HIDDEN_REPORTS_THRESHOLD = 3;

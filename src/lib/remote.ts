@@ -1,6 +1,6 @@
 import { RADIUS_OPTIONS } from './categories';
 import { IMAGE_BUCKET, supabase } from './supabase';
-import type { Alert, CategoryId, Coords } from './types';
+import type { Alert, CategoryId, Coords, ReportKind } from './types';
 
 // Capa de acceso a Supabase. Solo se usa si hay claves (ver supabase.ts); el estado de la app
 // vive en store.tsx y llama a estas funciones.
@@ -17,7 +17,10 @@ type FeedRow = {
   author_name: string;
   created_at: string;
   validations?: number;
-  reports?: number;
+  reports_falsa?: number;
+  reports_ofensivo?: number;
+  reports_spam?: number;
+  reports_ubicacion?: number;
 };
 
 export type NewAlert = Pick<Alert, 'category' | 'title' | 'description' | 'imageUri' | 'coords'>;
@@ -52,7 +55,12 @@ function toAlert(row: FeedRow, userId: string, contributions: number): Alert {
     author: { name: mine ? 'Vos' : row.author_name, contributions },
     authorId: row.user_id,
     validations: row.validations ?? 0,
-    reports: row.reports ?? 0,
+    reports: {
+      falsa: row.reports_falsa ?? 0,
+      ofensivo: row.reports_ofensivo ?? 0,
+      spam: row.reports_spam ?? 0,
+      ubicacion: row.reports_ubicacion ?? 0,
+    },
     mine,
   };
 }
@@ -130,8 +138,8 @@ export async function validateRemote(alertId: string) {
   if (error && error.code !== DUPLICATE) throw error;
 }
 
-export async function reportRemote(alertId: string) {
-  const { error } = await client().from('reports').insert({ alert_id: alertId });
+export async function reportRemote(alertId: string, kind: ReportKind) {
+  const { error } = await client().from('reports').insert({ alert_id: alertId, kind });
   if (error && error.code !== DUPLICATE) throw error;
 }
 

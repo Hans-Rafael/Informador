@@ -1,5 +1,7 @@
 export type CategoryId = 'seguridad' | 'transito' | 'cultura' | 'comercio' | 'servicios';
 
+export type ReportKind = 'falsa' | 'ofensivo' | 'spam' | 'ubicacion';
+
 export type Coords = { latitude: number; longitude: number };
 
 export type Alert = {
@@ -15,7 +17,8 @@ export type Alert = {
   /** Id del autor en el servidor (para contar sus aportes). */
   authorId?: string;
   validations: number;
-  reports: number;
+  /** Reportes por tipo: cada tipo pesa distinto al moderar (ver isHidden en store.tsx). */
+  reports: Record<ReportKind, number>;
   mine?: boolean;
 };
 

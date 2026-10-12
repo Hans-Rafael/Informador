@@ -16,6 +16,14 @@
 
 La clave *anon* puede ir dentro de la app: la protección real son las reglas RLS de `schema.sql`.
 
+## Moderación
+
+`schema.sql` ya incluye las reglas: ofensivo se oculta con 2 reportes; falso y spam, con 3 o más y más reportes que validaciones; ubicación incorrecta no oculta. Cada usuario puede hacer hasta 20 reportes cada 24 h.
+
+Para revisar a mano, en el **SQL Editor**: `select * from alerts_reported;` lista las alertas con algún reporte (ocultas o no), las más reportadas primero. Para borrar una falsa: `delete from alerts where id = '…';`.
+
+Si ya tenías el esquema, vuelve a ejecutar `schema.sql` (es re-ejecutable): añade la columna `kind` a `reports` y actualiza la vista. Los reportes antiguos cuentan como "falsa".
+
 ## Caducidad de alertas (opcional)
 
 Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un borrado diario a medianoche UTC según la categoría:

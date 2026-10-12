@@ -40,17 +40,77 @@ create table if not exists public.reports (
   primary key (alert_id, user_id)
 );
 
+-- Tipo de reporte: pesa distinto al moderar (ver alerts_feed). Los reportes anteriores cuentan como 'falsa'.
+alter table public.reports add column if not exists kind text not null default 'falsa'
+  check (kind in ('falsa', 'ofensivo', 'spam', 'ubicacion'));
+
 -- ───────────── Vista que usa la app para listar ─────────────
--- Trae los contadores de validaciones y reportes, y oculta las alertas con 3 o más reportes
--- (mismo umbral que HIDDEN_REPORTS_THRESHOLD en la app). Se ejecuta con los permisos de su
--- dueño a propósito: así los contadores son exactos sin exponer quién votó ni quién reportó.
+-- Trae los contadores de validaciones y reportes (total y por tipo) y oculta las alertas moderadas.
+-- Se ejecuta con los permisos de su dueño a propósito: así los contadores son exactos sin exponer
+-- quién votó ni quién reportó.
+--
+-- Regla de ocultación (la misma que isHidden() en src/lib/store.tsx):
+--   · contenido ofensivo: 2 o más reportes la ocultan, aunque tenga validaciones;
+--   · información falsa + spam: se oculta con 3 o más reportes Y más reportes que validaciones,
+--     así una noticia confirmada por varios vecinos no cae por unos pocos reportes;
+--   · ubicación incorrecta: no oculta (la noticia puede ser cierta); solo se cuenta.
 create or replace view public.alerts_feed as
 select
   a.*,
-  (select count(*) from public.validations v where v.alert_id = a.id)::int as validations,
-  (select count(*) from public.reports r where r.alert_id = a.id)::int     as reports
+  val.n::int            as validations,
+  rep.total::int        as reports,
+  rep.falsa::int        as reports_falsa,
+  rep.ofensivo::int     as reports_ofensivo,
+  rep.spam::int         as reports_spam,
+  rep.ubicacion::int    as reports_ubicacion
 from public.alerts a
-where (select count(*) from public.reports r where r.alert_id = a.id) < 3;
+cross join lateral (
+  select count(*) as n from public.validations v where v.alert_id = a.id
+) val
+cross join lateral (
+  select
+    count(*)                                  as total,
+    count(*) filter (where r.kind = 'falsa')     as falsa,
+    count(*) filter (where r.kind = 'ofensivo')  as ofensivo,
+    count(*) filter (where r.kind = 'spam')      as spam,
+    count(*) filter (where r.kind = 'ubicacion') as ubicacion
+  from public.reports r where r.alert_id = a.id
+) rep
+where not (
+  rep.ofensivo >= 2
+  or (rep.falsa + rep.spam >= 3 and rep.falsa + rep.spam > val.n)
+);
+
+-- Para moderar a mano desde el panel de Supabase (Table Editor / SQL Editor): alertas con al menos
+-- un reporte, ocultas o no, las más reportadas primero. Nadie de la app puede leerla.
+create or replace view public.alerts_reported as
+select
+  a.id, a.created_at, a.category, a.title, a.description, a.author_name, a.user_id,
+  val.n::int         as validations,
+  rep.total::int     as reports,
+  rep.falsa::int     as reports_falsa,
+  rep.ofensivo::int  as reports_ofensivo,
+  rep.spam::int      as reports_spam,
+  rep.ubicacion::int as reports_ubicacion,
+  (
+    rep.ofensivo >= 2
+    or (rep.falsa + rep.spam >= 3 and rep.falsa + rep.spam > val.n)
+  ) as oculta
+from public.alerts a
+cross join lateral (
+  select count(*) as n from public.validations v where v.alert_id = a.id
+) val
+cross join lateral (
+  select
+    count(*)                                  as total,
+    count(*) filter (where r.kind = 'falsa')     as falsa,
+    count(*) filter (where r.kind = 'ofensivo')  as ofensivo,
+    count(*) filter (where r.kind = 'spam')      as spam,
+    count(*) filter (where r.kind = 'ubicacion') as ubicacion
+  from public.reports r where r.alert_id = a.id
+) rep
+where rep.total > 0
+order by rep.total desc, a.created_at desc;
 
 -- ───────────── Seguridad por filas (RLS) ─────────────
 
@@ -87,16 +147,24 @@ drop policy if exists "reports_select_own" on public.reports;
 create policy "reports_select_own" on public.reports for select to authenticated
   using (user_id = auth.uid());
 
+-- Además, máximo 20 reportes por usuario cada 24 h: frena a quien reporta en masa para tumbar noticias.
 drop policy if exists "reports_insert_others" on public.reports;
 create policy "reports_insert_others" on public.reports for insert to authenticated
   with check (
     user_id = auth.uid()
     and not exists (select 1 from public.alerts a where a.id = alert_id and a.user_id = auth.uid())
+    and (
+      select count(*) from public.reports r
+      where r.user_id = auth.uid() and r.created_at > now() - interval '1 day'
+    ) < 20
   );
 
 -- La vista solo se lee; nadie escribe a través de ella.
 revoke all on public.alerts_feed from anon, authenticated;
 grant select on public.alerts_feed to authenticated;
+
+-- La vista de moderación es solo para el panel de Supabase (rol postgres): la app no la ve.
+revoke all on public.alerts_reported from anon, authenticated;
 
 -- ───────────── Imágenes (Storage) ─────────────
 -- Bucket público de lectura; cada usuario sube solo dentro de su propia carpeta (<user_id>/...).
