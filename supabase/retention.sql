@@ -77,7 +77,7 @@ drop trigger if exists alerts_delete_image on public.alerts;
 create trigger alerts_delete_image
   after delete on public.alerts
   for each row
-  when (old.image_path is not null)
+  when (old.image_path is not null and old.image_path not like 'http%')  -- solo fotos del bucket, no URLs externas
   execute function public.delete_alert_image();
 
 -- Para quitarlo:  select cron.unschedule('limpieza-alerts-por-categoria');
