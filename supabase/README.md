@@ -37,14 +37,7 @@ Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un bor
 | Cultura y eventos | 7 días |
 | Servicios y otras | 3 días |
 
-Los votos y reportes se borran con la alerta. Para que también se borre la **foto** del bucket `alert-images` (Supabase no deja borrar archivos con SQL), guarda dos secretos en Vault, una sola vez, en el SQL Editor:
-
-```sql
-select vault.create_secret('https://TU-PROYECTO.supabase.co', 'project_url');
-select vault.create_secret('TU-CLAVE-SERVICE-ROLE', 'service_role_key');
-```
-
-La clave `service_role` está en **Project Settings → API**. Es un **secreto**: no la pegues en chats, en git ni en la app. Se queda en Vault y solo la lee el trigger `alerts_delete_image`. Si no la configuras, las alertas se borran igual pero las fotos quedan en el bucket (puedes vaciarlo a mano desde **Storage**).
+Los votos y reportes se borran con la alerta. La **foto** del bucket `alert-images` se borra con una Edge Function: ver "Borrado de fotos" más abajo.
 
 ---
 
@@ -102,3 +95,18 @@ Hace falta un **teléfono real** (los emuladores no reciben push).
 - Se guarda una **zona aproximada (~100 m)**, nunca la posición exacta, y se puede desactivar en cualquier momento.
 - Los tokens caducados (apps desinstaladas) no se limpian solos todavía.
 - Por ahora se avisa de todas las categorías; elegir cuáles queda para más adelante.
+
+---
+
+# Borrado de fotos (Edge Function)
+
+Supabase no deja borrar archivos con SQL, y `pg_net` no puede hablar con Storage con una clave `sb_secret_…`. Por eso, al borrarse una alerta, un trigger llama a una Edge Function que borra la foto con `supabase-js`. La clave de administrador no sale de Supabase: la función la recibe inyectada.
+
+1. **Secreto compartido.** Genera un valor aleatorio largo (`openssl rand -hex 32`, o cualquier generador de contraseñas de 40+ caracteres). Se usa dos veces, con el mismo valor.
+2. **Edge Functions → Deploy a new function → Via Editor.** Nombre `delete-alert-image`; pega `supabase/functions/delete-alert-image/index.ts` y despliega. En los ajustes de la función desactiva **Verify JWT** (la protege el secreto compartido).
+3. **Edge Functions → Secrets → Add new secret:** `CLEANUP_SECRET` con el valor del paso 1.
+4. **Vault** (SQL Editor): `select vault.create_secret('EL-VALOR', 'cleanup_secret');` (valor primero, nombre después). `project_url` ya debe existir.
+5. **SQL Editor:** pega `supabase/functions/delete-alert-image/trigger.sql`. Reemplaza el trigger anterior, que tiene el mismo nombre.
+6. **Prueba:** publica una alerta con foto, bórrala y comprueba en Storage que la foto desaparece. Si no, mira **Edge Functions → Logs** y los avisos `delete_alert_image:` en los logs de Postgres.
+
+Si antes guardaste la clave `service_role` o `sb_secret_…` en Vault para esto (`service_role_key`), ya no hace falta: bórrala.
