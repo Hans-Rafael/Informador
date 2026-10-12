@@ -57,6 +57,15 @@ Para los builds de EAS, entrega también el `google-services.json` (el archivo l
 pnpm exec eas env:create --environment preview --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility sensitive
 ```
 
+Para el build de **producción** (el que se sube a Play Store) hay que dar lo mismo al entorno `production`. Si falta `GOOGLE_SERVICES_JSON`, el build falla a propósito en vez de salir sin notificaciones:
+
+```bash
+pnpm exec eas env:create --environment production --name GOOGLE_SERVICES_JSON --type file --value ./google-services.json --visibility sensitive
+pnpm exec eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://TU-PROYECTO.supabase.co --visibility plaintext
+pnpm exec eas env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value tu-clave-publica --visibility plaintext
+pnpm exec eas build -p android --profile production   # genera el .aab para Play Store
+```
+
 Si algún indicador de `eas env:create` cambió, mira `pnpm exec eas env:create --help`.
 
 ## 4. Probar
