@@ -22,6 +22,8 @@ La clave *anon* puede ir dentro de la app: la protección real son las reglas RL
 
 Para revisar a mano, en el **SQL Editor**: `select * from alerts_reported;` lista las alertas con algún reporte (ocultas o no), las más reportadas primero. Para borrar una falsa: `delete from alerts where id = '…';`.
 
+Publicar también está limitado en el servidor: la foto debe ser un archivo propio del bucket (no una URL externa) y cada usuario puede crear hasta 10 alertas por hora. Se ajusta en la política `alerts_insert_own` de `schema.sql`. Para ver quién publica más: `select user_id, count(*) from alerts group by 1 order by 2 desc;`. Para limpiar a un abusador, `delete from auth.users where id = '…';` borra también sus alertas, votos y reportes.
+
 Si ya tenías el esquema, vuelve a ejecutar `schema.sql` (es re-ejecutable): añade la columna `kind` a `reports` y actualiza la vista. Los reportes antiguos cuentan como "falsa".
 
 ## Caducidad de alertas (opcional)

@@ -122,9 +122,19 @@ alter table public.reports     enable row level security;
 drop policy if exists "alerts_select" on public.alerts;
 create policy "alerts_select" on public.alerts for select to authenticated using (true);
 
+-- La clave anon va dentro de la app, así que cualquiera puede hablar con la API sin pasar por ella:
+-- por eso se valida aquí lo que la app ya garantiza. La foto solo puede ser un archivo propio del
+-- bucket (nunca una URL externa) y cada usuario puede publicar como máximo 10 alertas por hora.
 drop policy if exists "alerts_insert_own" on public.alerts;
 create policy "alerts_insert_own" on public.alerts for insert to authenticated
-  with check (user_id = auth.uid());
+  with check (
+    user_id = auth.uid()
+    and (image_path is null or image_path like auth.uid()::text || '/%')
+    and (
+      select count(*) from public.alerts a
+      where a.user_id = auth.uid() and a.created_at > now() - interval '1 hour'
+    ) < 10
+  );
 
 drop policy if exists "alerts_delete_own" on public.alerts;
 create policy "alerts_delete_own" on public.alerts for delete to authenticated
