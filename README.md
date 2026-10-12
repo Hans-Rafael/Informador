@@ -155,7 +155,7 @@ El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 - [ ] Registro de usuario y perfiles con métricas de contribución
 - [ ] Modo sin conexión: mosaicos del mapa en caché y alertas guardadas
 - [ ] Compartir ubicación y botón de emergencia
-- [ ] Versión para iPhone
+- [ ] Versión para iPhone (not Available yet)
 
 ## Autor
 
