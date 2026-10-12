@@ -79,5 +79,6 @@ Hace falta un **teléfono real** (los emuladores no reciben push).
 ## Privacidad y límites
 
 - Se guarda una **zona aproximada (~100 m)**, nunca la posición exacta, y se puede desactivar en cualquier momento.
-- Los tokens caducados (apps desinstaladas) no se limpian solos todavía.
+- **Limpieza de tokens:** antes de cada aviso, `push.sql` borra los tokens activos que llevan 90 días sin renovarse (app desinstalada o sin abrir) y los desactivados hace más de 30 días. La app renueva su token cada vez que se abre, así que quien vuelva se registra solo. No hace falta pg_cron; para forzarla: `select purge_push_tokens();` en el SQL Editor. Si ya habías ejecutado `push.sql`, vuelve a ejecutarlo para activar la limpieza.
+- No se detectan los fallos de entrega que informa Expo (`DeviceNotRegistered`): los tokens muertos se limpian por antigüedad, no al primer fallo.
 - Por ahora se avisa de todas las categorías; elegir cuáles queda para más adelante.

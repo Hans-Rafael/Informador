@@ -150,7 +150,7 @@ El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 
 ## Hoja de ruta
 
-- [ ] Elegir qué categorías avisan, y limpiar tokens caducados
+- [ ] Elegir qué categorías avisan
 - [ ] Valoración del informante calculada en el servidor
 - [ ] Registro de usuario y perfiles con métricas de contribución
 - [ ] Modo sin conexión: mosaicos del mapa en caché y alertas guardadas

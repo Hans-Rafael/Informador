@@ -39,6 +39,35 @@ drop policy if exists "push_tokens_delete_own" on public.push_tokens;
 create policy "push_tokens_delete_own" on public.push_tokens for delete to authenticated
   using (user_id = auth.uid());
 
+-- ───────────── Limpieza de tokens caducados ─────────────
+-- Cuando se desinstala la app, el token queda en la tabla para siempre y se le siguen enviando avisos
+-- que nadie recibe. La app renueva updated_at cada vez que se abre con los avisos activados, así que
+-- un token que lleva meses sin renovarse casi seguro es de una app desinstalada.
+--   · activos sin renovar en 90 días            → se borran
+--   · desactivados por el usuario hace 30 días  → se borran (ya no se les envía nada)
+-- Quien vuelva a abrir la app se registra otra vez solo. La función corre sola antes de cada aviso
+-- (ver abajo), así que no hace falta pg_cron; también puedes lanzarla a mano: select purge_push_tokens();
+
+create index if not exists push_tokens_updated_at_idx on public.push_tokens (updated_at);
+
+create or replace function public.purge_push_tokens()
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  with gone as (
+    delete from public.push_tokens
+    where (enabled and updated_at < now() - interval '90 days')
+       or (not enabled and updated_at < now() - interval '30 days')
+    returning 1
+  )
+  select count(*)::integer from gone;
+$$;
+
+-- Solo la ejecuta el trigger (o tú desde el SQL Editor): nadie puede llamarla desde la API.
+revoke all on function public.purge_push_tokens() from public, anon, authenticated;
+
 -- ───────────── Aviso al publicarse una alerta ─────────────
 
 create or replace function public.notify_nearby_alert()
@@ -58,6 +87,13 @@ declare
     else 'Nueva alerta'
   end;
 begin
+  -- Limpieza de tokens caducados; si falla, los avisos salen igual.
+  begin
+    perform public.purge_push_tokens();
+  exception when others then
+    raise warning 'purge_push_tokens: %', sqlerrm;
+  end;
+
   -- Expo acepta hasta 100 mensajes por petición: agrupamos de a 100.
   for chunk in
     select jsonb_agg(m.msg) as body
