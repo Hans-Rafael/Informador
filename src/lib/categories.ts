@@ -38,6 +38,20 @@ export const REPORT_KINDS: { kind: ReportKind; label: string }[] = [
 
 // Umbrales de moderación comunitaria.
 export const VALIDATED_THRESHOLD = 3;
+// Cuánto vive una alerta según su categoría. Mismos plazos que supabase/retention.sql.
+const DAY_MS = 24 * 60 * 60 * 1000;
+const RETENTION_DAYS: Record<CategoryId, number> = {
+  seguridad: 2,
+  transito: 2,
+  comercio: 3,
+  cultura: 7,
+  servicios: 3,
+};
+
+export function retentionMs(category: CategoryId): number {
+  return (RETENTION_DAYS[category] ?? 3) * DAY_MS;
+}
+
 export function noReports(): Record<ReportKind, number> {
   return { falsa: 0, ofensivo: 0, spam: 0, ubicacion: 0 };
 }

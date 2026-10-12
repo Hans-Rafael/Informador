@@ -35,7 +35,14 @@ Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un bor
 | Cultura y eventos | 7 días |
 | Servicios y otras | 3 días |
 
-Los votos y reportes se borran con la alerta. Las **fotos** del bucket `alert-images` no se borran solas: quedan huérfanas.
+Los votos y reportes se borran con la alerta. Para que también se borre la **foto** del bucket `alert-images` (Supabase no deja borrar archivos con SQL), guarda dos secretos en Vault, una sola vez, en el SQL Editor:
+
+```sql
+select vault.create_secret('https://TU-PROYECTO.supabase.co', 'project_url');
+select vault.create_secret('TU-CLAVE-SERVICE-ROLE', 'service_role_key');
+```
+
+La clave `service_role` está en **Project Settings → API**. Es un **secreto**: no la pegues en chats, en git ni en la app. Se queda en Vault y solo la lee el trigger `alerts_delete_image`. Si no la configuras, las alertas se borran igual pero las fotos quedan en el bucket (puedes vaciarlo a mano desde **Storage**).
 
 ---
 

@@ -72,7 +72,7 @@ export function seedAlerts(center: Coords): Alert[] {
       title: 'Semáforo sin funcionar',
       description: 'El semáforo del cruce está apagado. Cruzar con precaución.',
       coords: offset(center, 1800, -900),
-      createdAt: now - 4 * 24 * 60 * min,
+      createdAt: now - 40 * 60 * min,
       author: { name: 'Mariana S.', rating: 4.7, contributions: 30 },
       validations: 6,
       reports: noReports(),

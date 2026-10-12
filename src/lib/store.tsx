@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { HIDDEN_OFFENSIVE_THRESHOLD, HIDDEN_REPORTS_THRESHOLD, noReports, VALIDATED_THRESHOLD } from './categories';
+import { HIDDEN_OFFENSIVE_THRESHOLD, HIDDEN_REPORTS_THRESHOLD, noReports, retentionMs, VALIDATED_THRESHOLD } from './categories';
 import { DEFAULT_COORDS, distanceMeters } from './geo';
 import { getPushToken, type PushFailure } from './push';
 import {
@@ -147,7 +147,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const coords = onboarded ? await refreshLocation() : DEFAULT_COORDS;
       setState({
         // Con servidor se ignoran las alertas y votos guardados en el teléfono (eran de pruebas locales).
-        alerts: remoteEnabled ? [] : saved?.alerts ?? (onboarded ? seedAlerts(coords) : []),
+        // En modo local las alertas caducadas se borran al abrir la app (el servidor lo hace con pg_cron).
+        alerts: remoteEnabled ? [] : saved?.alerts?.filter((a) => !isExpired(a)) ?? (onboarded ? seedAlerts(coords) : []),
         sites: saved?.sites ?? [],
         filters: { ...DEFAULT_FILTERS, ...saved?.filters },
         validatedIds: remoteEnabled ? [] : saved?.validatedIds ?? [],
@@ -315,6 +316,12 @@ export function isValidated(alert: Alert) {
   return alert.validations >= VALIDATED_THRESHOLD;
 }
 
+// Pasó el tiempo de vida de su categoría. El servidor la borra una vez al día; aquí se deja de mostrar
+// al instante para que la caducidad no dependa de cuándo corre el cron.
+export function isExpired(alert: Alert) {
+  return Date.now() - alert.createdAt > retentionMs(alert.category);
+}
+
 // Moderación comunitaria. Igual que la vista alerts_feed del servidor: contenido ofensivo se oculta
 // con pocos reportes; falso y spam necesitan más reportes que validaciones; ubicación no oculta.
 export function isHidden(alert: Alert) {
@@ -341,7 +348,7 @@ export function useAlertsNear(center: Coords, radius: number, applyFilters = fal
     const minDate =
       filters.date === 'hoy' ? Date.now() - dayMs : filters.date === 'semana' ? Date.now() - 7 * dayMs : 0;
     const list = alerts
-      .filter((a) => !isHidden(a))
+      .filter((a) => !isHidden(a) && !isExpired(a))
       .map((a) => ({ ...a, distance: distanceMeters(center, a.coords) }))
       .filter((a) => a.distance <= radius)
       .filter(

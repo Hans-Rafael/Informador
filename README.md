@@ -163,11 +163,10 @@ Así una noticia confirmada por varios vecinos no cae por unos pocos reportes, y
 
 ## Caducidad de las alertas
 
-Una noticia hiperlocal envejece rápido, así que en el servidor las alertas caducan por categoría (`supabase/retention.sql`): seguridad y tránsito **2 días**, promos **3**, cultura y eventos **7**, y el resto **3**.
+Una noticia hiperlocal envejece rápido, así que en el servidor las alertas caducan por categoría (`supabase/retention.sql`): seguridad y tránsito **2 días**, promos **3**, cultura y eventos **7**, y el resto **3**. Al borrarse una alerta se borra también su foto. La app deja de mostrar las caducadas al instante y en modo local las borra al abrirse.
 
 ## Hoja de ruta
 
-- [ ] Aplicar la misma caducidad en modo local y borrar las fotos huérfanas del bucket
 - [ ] Elegir qué categorías avisan, y limpiar tokens caducados
 - [ ] Valoración del informante calculada en el servidor
 - [ ] Registro de usuario y perfiles con métricas de contribución

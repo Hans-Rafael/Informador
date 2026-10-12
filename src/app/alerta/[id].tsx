@@ -23,7 +23,7 @@ import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
 import { categoryTextColor, getCategory, REPORT_KINDS, VALIDATED_THRESHOLD } from '@/lib/categories';
 import { distanceMeters, formatDistance, timeAgo } from '@/lib/geo';
-import { isDemo, isHidden, isValidated, useStore } from '@/lib/store';
+import { isDemo, isExpired, isHidden, isValidated, useStore } from '@/lib/store';
 import type { ReportKind } from '@/lib/types';
 
 export default function AlertaScreen() {
@@ -40,7 +40,7 @@ export default function AlertaScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  if (!alert || isHidden(alert)) {
+  if (!alert || isHidden(alert) || isExpired(alert)) {
     return (
       <View style={[styles.flex, { backgroundColor: theme.colors.background }]}>
         <Appbar.Header>
