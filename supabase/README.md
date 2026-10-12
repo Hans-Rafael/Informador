@@ -93,7 +93,7 @@ Hace falta un **teléfono real** (los emuladores no reciben push).
 ## Privacidad y límites
 
 - Se guarda una **zona aproximada (~100 m)**, nunca la posición exacta, y se puede desactivar en cualquier momento.
-- Los tokens caducados (apps desinstaladas) no se limpian solos todavía.
+- Los tokens de apps desinstaladas o sin abrir en **30 días** se borran solos cada día con `pg_cron` (ver `retention.sql`, trabajo `limpieza-push-tokens`). Quien vuelva a abrir la app se registra de nuevo.
 - Por ahora se avisa de todas las categorías; elegir cuáles queda para más adelante.
 
 ---
