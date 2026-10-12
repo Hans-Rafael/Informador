@@ -73,6 +73,7 @@ src/
 supabase/
   schema.sql      Tablas, reglas de seguridad (RLS) e imágenes
   push.sql        Tokens y trigger de notificaciones por radio
+  retention.sql   Caducidad de alertas por categoría (pg_cron)
   README.md       Puesta en marcha de Supabase
 ```
 
@@ -148,8 +149,13 @@ El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 - **Color de alerta por categoría** (rojo para seguridad, naranja para tránsito…), como proponía el user journey.
 - **Nombre InfoBarrio**, elegido por los usuarios en la encuesta de naming.
 
+## Caducidad de las alertas
+
+Una noticia hiperlocal envejece rápido, así que en el servidor las alertas caducan por categoría (`supabase/retention.sql`): seguridad y tránsito **2 días**, promos **3**, cultura y eventos **7**, y el resto **3**.
+
 ## Hoja de ruta
 
+- [ ] Aplicar la misma caducidad en modo local y borrar las fotos huérfanas del bucket
 - [ ] Elegir qué categorías avisan, y limpiar tokens caducados
 - [ ] Valoración del informante calculada en el servidor
 - [ ] Registro de usuario y perfiles con métricas de contribución

@@ -16,6 +16,19 @@
 
 La clave *anon* puede ir dentro de la app: la protección real son las reglas RLS de `schema.sql`.
 
+## Caducidad de alertas (opcional)
+
+Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un borrado diario a medianoche UTC según la categoría:
+
+| Categoría | Se borra tras |
+| --- | --- |
+| Seguridad, tránsito | 2 días |
+| Promos y comercio | 3 días |
+| Cultura y eventos | 7 días |
+| Servicios y otras | 3 días |
+
+Los votos y reportes se borran con la alerta. Las **fotos** del bucket `alert-images` no se borran solas: quedan huérfanas.
+
 ---
 
 # Notificaciones push por radio
