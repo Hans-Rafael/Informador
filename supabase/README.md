@@ -28,7 +28,7 @@ Si ya tenías el esquema, vuelve a ejecutar `schema.sql` (es re-ejecutable): añ
 
 ## Caducidad de alertas (opcional)
 
-Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un borrado diario a medianoche UTC según la categoría:
+Ejecuta `supabase/retention.sql` en el SQL Editor. Programa con `pg_cron` un borrado diario a medianoche de Buenos Aires (03:00 UTC, porque `pg_cron` trabaja en UTC) según la categoría:
 
 | Categoría | Se borra tras |
 | --- | --- |

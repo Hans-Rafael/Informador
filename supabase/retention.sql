@@ -1,7 +1,7 @@
 -- Caducidad de alertas por categoría (ejecutar después de schema.sql).
 --
 -- Una noticia hiperlocal envejece rápido: un corte de calle de hace una semana es ruido.
--- Cada día a medianoche (UTC) se borran las alertas que superan la retención de su categoría.
+-- Cada día a medianoche de Buenos Aires (03:00 UTC; pg_cron trabaja en UTC y Argentina es UTC-3 todo el año) se borran las alertas que superan la retención de su categoría.
 -- Los votos y reportes se borran solos (on delete cascade) y la foto, con el trigger de delete-alert-image.
 --
 --   seguridad, transito  → 2 días
@@ -16,7 +16,7 @@ create extension if not exists pg_cron;
 -- cron.schedule con el mismo nombre actualiza el trabajo: se puede volver a ejecutar sin duplicarlo.
 select cron.schedule(
   'limpieza-alerts-por-categoria',
-  '0 0 * * *',
+  '0 3 * * *',
   $$
   delete from public.alerts
   where
@@ -32,11 +32,11 @@ select cron.schedule(
 -- ───────────── Tokens de notificación abandonados ─────────────
 -- Cada fila de push_tokens es un teléfono registrado para recibir avisos. La app renueva updated_at
 -- cada vez que lo registra, así que un token sin renovar en 30 días es de una app desinstalada o
--- abandonada. Se borra cada día a las 00:10 UTC; quien vuelva a abrir la app se registra de nuevo.
+-- abandonada. Se borra cada día a las 00:10 de Buenos Aires (03:10 UTC); quien vuelva a abrir la app se registra de nuevo.
 -- Requiere haber ejecutado push.sql (si no, la tabla no existe).
 select cron.schedule(
   'limpieza-push-tokens',
-  '10 0 * * *',
+  '10 3 * * *',
   $$ delete from public.push_tokens where updated_at < now() - interval '30 days' $$
 );
 
