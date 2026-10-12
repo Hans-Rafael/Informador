@@ -6,8 +6,9 @@ import { BottomNavigation, Icon } from 'react-native-paper';
 const TAB_ICONS: Record<string, [focused: string, unfocused: string]> = {
   index: ['home', 'home-outline'],
   alertas: ['alert-circle', 'alert-circle-outline'],
-  'mis-sitios': ['star', 'star-outline'],
   nueva: ['share-variant', 'share-variant-outline'],
+  'mis-sitios': ['star', 'star-outline'],
+  noticias: ['newspaper-variant', 'newspaper-variant-outline'],
 };
 
 export default function TabLayout() {
@@ -51,8 +52,9 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
       <Tabs.Screen name="alertas" options={{ title: 'Alertas' }} />
-      <Tabs.Screen name="mis-sitios" options={{ title: 'Mis sitios' }} />
       <Tabs.Screen name="nueva" options={{ title: 'Compartir' }} />
+      <Tabs.Screen name="mis-sitios" options={{ title: 'Mis sitios' }} />
+      <Tabs.Screen name="noticias" options={{ title: 'Noticias' }} />
     </Tabs>
   );
 }
