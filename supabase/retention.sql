@@ -54,15 +54,11 @@ begin
     return old;
   end if;
 
-  -- La clave legacy (service_role, empieza por eyJ) es un JWT y va en Authorization; las claves nuevas
-  -- (sb_secret_...) no son JWT y solo se envían en apikey.
+  -- Storage exige las dos cabeceras, tanto con la clave legacy (service_role, eyJ...) como con una
+  -- secret key nueva (sb_secret_...): el mismo valor va en apikey y en Authorization.
   perform net.http_delete(
     url     := base_url || '/storage/v1/object/alert-images/' || old.image_path,
-    headers := case
-      when service_key like 'eyJ%'
-        then jsonb_build_object('apikey', service_key, 'Authorization', 'Bearer ' || service_key)
-      else jsonb_build_object('apikey', service_key)
-    end
+    headers := jsonb_build_object('apikey', service_key, 'Authorization', 'Bearer ' || service_key)
   );
   return old;
 exception when others then
