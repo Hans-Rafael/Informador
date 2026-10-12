@@ -9,9 +9,9 @@ El proyecto nace de un estudio de UX completo (investigación, benchmarking, pro
 <!--
 Capturas: súbelas a docs/screenshots/ y descomenta.
 
-| Inicio | Alertas | Mis sitios | Compartir |
-| --- | --- | --- | --- |
-| ![Inicio](docs/screenshots/inicio.png) | ![Alertas](docs/screenshots/alertas.png) | ![Mis sitios](docs/screenshots/mis-sitios.png) | ![Compartir](docs/screenshots/compartir.png) |
+| Inicio | Alertas | Compartir | Mis sitios | Noticias |
+| --- | --- | --- | --- | --- |
+| ![Inicio](docs/screenshots/inicio.png) | ![Alertas](docs/screenshots/alertas.png) | ![Compartir](docs/screenshots/compartir.png) | ![Mis sitios](docs/screenshots/mis-sitios.png) | ![Noticias](docs/screenshots/noticias.png) |
 -->
 
 ## Qué incluye
@@ -26,6 +26,7 @@ Capturas: súbelas a docs/screenshots/ y descomenta.
 | Validación de noticias entre vecinos | ✅ |
 | Moderación y reporte de contenido (se oculta con 3 reportes) | ✅ |
 | Mis sitios (casa, trabajo y lugares de interés) | ✅ |
+| Noticias locales de tu ciudad (Google Noticias y Bing Noticias) | ✅ |
 | Alertas compartidas entre usuarios (Supabase, en tiempo real) | ✅ |
 | Pantalla de bienvenida y aviso de sin conexión en el mapa | ✅ |
 | Notificaciones push por radio | ✅ (requiere Firebase, ver `supabase/README.md`) |
@@ -42,8 +43,9 @@ Siguen el mapa del sitio del estudio UX.
 | --- | --- | --- |
 | Inicio | `src/app/(tabs)/index.tsx` | Mapa a pantalla completa y hoja inferior arrastrable "En esta zona" con radio ajustable |
 | Alertas | `src/app/(tabs)/alertas.tsx` | Lista de alertas, chips de categoría y hoja de **Filtros** |
+| Compartir | `src/app/compartir.tsx` | Editor de noticias (se abre desde la pestaña central) |
 | Mis sitios | `src/app/(tabs)/mis-sitios.tsx` | Casa, trabajo y sitios de interés con sus alertas cercanas |
-| Compartir | `src/app/compartir.tsx` | Editor de noticias (se abre desde la 4.ª pestaña) |
+| Noticias | `src/app/(tabs)/noticias.tsx` | Titulares locales de tu ciudad, tomados de Google Noticias y Bing Noticias; se abren en el sitio del medio |
 | Detalle | `src/app/alerta/[id].tsx` | Validar, reportar, compartir y ver al informante |
 | Bienvenida | `src/components/welcome.tsx` | Primer uso: explica la app y pide la ubicación |
 
@@ -143,7 +145,7 @@ EAS construye con lo que hay en tu carpeta local. Con el plan gratuito, la cola 
 El estudio UX (en `Diseño UX-Informador`) guía la interfaz:
 
 - **Home** con mapa arriba y hoja "En esta zona" abajo, como en los wireframes.
-- **Barra inferior de 4 ítems**: Inicio, Alertas, Mis sitios y Compartir.
+- **Barra inferior de 5 ítems**: Inicio, Alertas, Compartir (al centro), Mis sitios y Noticias.
 - **Filtros dentro de Alertas**, como recomendó el card sorting.
 - **Color de alerta por categoría** (rojo para seguridad, naranja para tránsito…), como proponía el user journey.
 - **Nombre InfoBarrio**, elegido por los usuarios en la encuesta de naming.
