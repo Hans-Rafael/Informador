@@ -6,13 +6,9 @@ InfoBarrio (nombre de trabajo: *Informador*) es una app móvil para enterarte de
 
 El proyecto nace de un estudio de UX completo (investigación, benchmarking, proto-personas, card sorting, wireframes) y esta app es su MVP.
 
-<!--
-Capturas: súbelas a docs/screenshots/ y descomenta.
-
 | Inicio | Alertas | Compartir | Mis sitios | Noticias |
 | --- | --- | --- | --- | --- |
-| ![Inicio](docs/screenshots/inicio.png) | ![Alertas](docs/screenshots/alertas.png) | ![Compartir](docs/screenshots/compartir.png) | ![Mis sitios](docs/screenshots/mis-sitios.png) | ![Noticias](docs/screenshots/noticias.png) |
--->
+| <img src="docs/screenshots/inicio.png" alt="Inicio" width="160"> | <img src="docs/screenshots/alertas.png" alt="Alertas" width="160"> | <img src="docs/screenshots/compartir.png" alt="Compartir" width="160"> | <img src="docs/screenshots/mis-sitios.png" alt="Mis sitios" width="160"> | <img src="docs/screenshots/noticias.png" alt="Noticias" width="160"> |
 
 ## Qué incluye
 
