@@ -21,9 +21,10 @@ import {
 
 import { AlertMap } from '@/components/alert-map';
 import { EmptyState } from '@/components/empty-state';
+import { StatusBadge } from '@/components/status-badge';
 import { categoryTextColor, getCategory, HIDDEN_REPORTS_THRESHOLD, REPORT_REASONS, VALIDATED_THRESHOLD } from '@/lib/categories';
 import { distanceMeters, formatDistance, timeAgo } from '@/lib/geo';
-import { isDemo, isValidated, useStore } from '@/lib/store';
+import { isDemo, useStore } from '@/lib/store';
 
 export default function AlertaScreen() {
   const theme = useTheme();
@@ -104,11 +105,7 @@ export default function AlertaScreen() {
             <Chip icon={category.icon} compact textStyle={{ color: categoryTextColor(alert.category, theme.dark) }}>
               {category.label}
             </Chip>
-            {isValidated(alert) && (
-              <Chip icon="check-decagram" compact>
-                Validada
-              </Chip>
-            )}
+            <StatusBadge alert={alert} size={16} />
             {isDemo(alert) && (
               <Chip icon="flask-outline" compact>
                 Ejemplo
