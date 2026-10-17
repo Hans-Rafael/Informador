@@ -5,7 +5,8 @@ import { Avatar, Card, Icon, Text, useTheme } from 'react-native-paper';
 
 import { categoryTextColor, getCategory } from '@/lib/categories';
 import { formatDistance, timeAgo } from '@/lib/geo';
-import { isDemo, isValidated, type AlertWithDistance } from '@/lib/store';
+import { isDemo, type AlertWithDistance } from '@/lib/store';
+import { StatusBadge } from './status-badge';
 
 // Con foto, la miniatura es más grande para que se pueda escanear la lista de un vistazo.
 const THUMB_ICON = 64;
@@ -51,26 +52,17 @@ export function AlertCard({ alert }: { alert: AlertWithDistance }) {
           <Text variant="labelSmall" numberOfLines={1} style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}>
             {timeAgo(alert.createdAt)} · {formatDistance(alert.distance)}
           </Text>
-          {(isValidated(alert) || isDemo(alert)) && (
-            <View style={styles.badges}>
-              {isValidated(alert) && (
-                <View style={styles.badge}>
-                  <Icon source="check-decagram" size={14} color={theme.colors.primary} />
-                  <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-                    Validada
-                  </Text>
-                </View>
-              )}
-              {isDemo(alert) && (
-                <View style={styles.badge}>
-                  <Icon source="flask-outline" size={14} color={theme.colors.onSurfaceVariant} />
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Ejemplo
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
+          <View style={styles.badges}>
+            <StatusBadge alert={alert} />
+            {isDemo(alert) && (
+              <View style={styles.badge}>
+                <Icon source="flask-outline" size={14} color={theme.colors.onSurfaceVariant} />
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Ejemplo
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </Card>
