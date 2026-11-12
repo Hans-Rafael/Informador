@@ -10,6 +10,21 @@ El proyecto nace de un estudio de UX completo (investigación, benchmarking, pro
 | --- | --- | --- | --- | --- |
 | <img src="docs/screenshots/inicio.png" alt="Inicio" width="160"> | <img src="docs/screenshots/alertas.png" alt="Alertas" width="160"> | <img src="docs/screenshots/compartir.png" alt="Compartir" width="160"> | <img src="docs/screenshots/mis-sitios.png" alt="Mis sitios" width="160"> | <img src="docs/screenshots/noticias.png" alt="Noticias" width="160"> |
 
+## Descargar la app de prueba (Android)
+
+Puedes probar InfoBarrio sin compilar nada instalando el APK de pruebas:
+
+**[⬇️ Descargar InfoBarrio.apk](https://github.com/Hans-Rafael/Informador/releases/latest)** (Android 7.0 o superior, unos 100 MB)
+
+1. Abre el enlace desde tu teléfono y descarga `InfoBarrio.apk` desde la sección *Assets*.
+2. Abre el archivo descargado. Si Android lo solicita, permite la instalación desde ese origen (navegador o gestor de archivos).
+3. Pulsa **Instalar** y abre la app.
+
+> [!NOTE]
+> **Sobre el aviso de seguridad de Android.** Esta es una versión de pruebas (*beta*) distribuida fuera de Google Play. Por eso Android mostrará un mensaje como *"Este tipo de archivo puede dañar tu dispositivo"* o *"Google Play Protect no reconoce esta app"*. Es una advertencia estándar del sistema para cualquier aplicación que no proviene de una tienda oficial; **no indica que la app sea maliciosa**.
+>
+> Para mayor seguridad, descarga el APK solo desde este repositorio y no desde enlaces de terceros. El código fuente es público y puedes revisarlo o compilar el APK tú mismo (ver [Generar el APK](#generar-el-apk)). Una vez probada, puedes volver a desactivar la instalación desde orígenes desconocidos en los ajustes del teléfono.
+
 ## Qué incluye
 
 | Funcionalidad del MVP | Estado |
